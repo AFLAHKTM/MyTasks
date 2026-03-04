@@ -823,6 +823,10 @@ p {
     gap: 1.5rem !important;
   }
 
+  .home-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
   /* Allow Kanban items to cleanly take up the screen but slide horizontally */
   .board-column {
     min-width: 85vw !important;
