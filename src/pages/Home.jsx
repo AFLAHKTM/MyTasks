@@ -9,7 +9,7 @@ export default function Home() {
 
     useEffect(() => {
         const handleDataSync = () => {
-    setTasks(getTasks());
+            setTasks(getTasks());
         };
         handleDataSync();
         window.addEventListener('appDataChanged', handleDataSync);
@@ -38,7 +38,7 @@ export default function Home() {
                 </div>
             </header>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem' }}>
+            <div className="home-dashboard-grid">
                 <div className="card">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
                         <CalendarIcon size={20} color="var(--accent-primary)" />
