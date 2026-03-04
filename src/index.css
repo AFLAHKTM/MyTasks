@@ -743,30 +743,30 @@ p {
     display: none !important;
   }
 
-  /* Align Navigation horizontal */
+  /* Align Navigation horizontal with horizontal scrolling */
   .sidebar-nav-container {
     display: flex !important;
     flex-direction: row !important;
     width: 100%;
     padding: 0 !important;
-    overflow: visible !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
   }
 
+  /* Hide the text labels "Workspace" and "Actions" */
   .sidebar-nav-container>div {
     display: none !important;
   }
 
-  .sidebar-nav-container>nav:first-of-type {
+  /* All nav blocks (both main and actions) displayed side-by-side */
+  .sidebar-nav-container>nav {
     display: flex !important;
     flex-direction: row !important;
-    width: 100%;
-    justify-content: space-around;
     align-items: center;
     padding: 0;
-  }
-
-  .sidebar-nav-container>nav:last-of-type {
-    display: none !important;
+    gap: 0;
   }
 
   /* Clean up Nav Links for purely Icon-Based Bottom touches */
@@ -775,6 +775,8 @@ p {
     padding: 1.25rem 1rem !important;
     background: transparent !important;
     justify-content: center !important;
+    border-radius: 0 !important;
+    min-width: 60px;
   }
 
   .sidebar nav a>div {

@@ -121,47 +121,49 @@ export default function Sidebar() {
                         <div style={{ flexShrink: 0, display: 'flex' }}><PlusSquare size={18} /></div>
                         {!isCollapsed && 'Create Task'}
                     </NavLink>
+                    <NavLink
+                        to="/settings"
+                        style={({ isActive }) => ({
+                            display: 'flex', alignItems: 'center', gap: '0.75rem',
+                            justifyContent: isCollapsed ? 'center' : 'flex-start',
+                            padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)',
+                            textDecoration: 'none', fontSize: '0.875rem', fontWeight: 500,
+                            color: isActive ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                            backgroundColor: isActive ? 'var(--accent-light)' : 'transparent',
+                            transition: 'all 0.15s',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden'
+                        })}
+                    >
+                        <div style={{ flexShrink: 0, display: 'flex' }}><SettingsIcon size={18} /></div>
+                        {!isCollapsed && 'Settings'}
+                    </NavLink>
+                    <button
+                        onClick={toggleTheme}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%',
+                            justifyContent: isCollapsed ? 'center' : 'flex-start',
+                            padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)',
+                            border: 'none', background: 'transparent', textAlign: 'left',
+                            fontFamily: 'inherit',
+                            fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)',
+                            cursor: 'pointer', transition: 'all 0.15s',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                    >
+                        <div style={{ flexShrink: 0, display: 'flex' }}>
+                            {isDark ? <Sun size={18} /> : <Moon size={18} />}
+                        </div>
+                        {!isCollapsed && (isDark ? 'Light Mode' : 'Dark Mode')}
+                    </button>
                 </nav>
             </div>
 
-            <div className="sidebar-footer" style={{ padding: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <NavLink
-                    to="/settings"
-                    style={({ isActive }) => ({
-                        display: 'flex', alignItems: 'center', gap: '0.75rem',
-                        justifyContent: isCollapsed ? 'center' : 'flex-start',
-                        padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)',
-                        textDecoration: 'none', fontSize: '0.875rem', fontWeight: 500,
-                        color: isActive ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                        backgroundColor: isActive ? 'var(--accent-light)' : 'transparent',
-                        transition: 'all 0.15s',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden'
-                    })}
-                >
-                    <div style={{ flexShrink: 0, display: 'flex' }}><SettingsIcon size={18} /></div>
-                    {!isCollapsed && 'Settings'}
-                </NavLink>
-                <button
-                    onClick={toggleTheme}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%',
-                        justifyContent: isCollapsed ? 'center' : 'flex-start',
-                        padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)',
-                        border: 'none', background: 'transparent', textAlign: 'left',
-                        fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)',
-                        cursor: 'pointer', transition: 'all 0.15s',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden'
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-                >
-                    <div style={{ flexShrink: 0, display: 'flex' }}>
-                        {isDark ? <Sun size={18} /> : <Moon size={18} />}
-                    </div>
-                    {!isCollapsed && (isDark ? 'Light Mode' : 'Dark Mode')}
-                </button>
+            <div className="sidebar-footer" style={{ display: 'none' }}>
+                {/* Moved inside nav container for mobile access */}
             </div>
         </aside>
     );
