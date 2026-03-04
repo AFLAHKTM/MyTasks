@@ -79,28 +79,55 @@ export default function BellNotification({ isCollapsed, alignRight }) {
                 // Create new persistent notifications for active tasks
                 urgentNotifs.forEach(notif => {
                     if (!window.osNotificationRegistry[notif.id]) {
-                        const notification = new Notification(notif.title, {
-                            body: notif.message,
-                            requireInteraction: true, // Specific requirement: stays in notification bar until task is no longer urgent/completed
-                            icon: "/favicon.ico"
-                        });
+                        try {
+                            const notification = new Notification(notif.title, {
+                                body: notif.message,
+                                requireInteraction: true, // Specific requirement: stays in notification bar until task is no longer urgent/completed
+                                icon: "/favicon.ico"
+                            });
 
-                        // Click behavior: focus window
-                        notification.onclick = () => {
-                            window.focus();
-                            notification.close(); // Close on click if user acts on it
-                        };
+                            // Click behavior: focus window
+                            notification.onclick = () => {
+                                window.focus();
+                                notification.close(); // Close on click if user acts on it
+                            };
 
-                        // Store reference to programmatically close it later
-                        window.osNotificationRegistry[notif.id] = notification;
+                            // Store reference to programmatically close it later
+                            window.osNotificationRegistry[notif.id] = notification;
+                        } catch (err) {
+                            // On Mobile (like Android Chrome), 'new Notification()' throws a TypeError.
+                            // We need to use service workers instead.
+                            if ('serviceWorker' in navigator) {
+                                navigator.serviceWorker.ready.then(registration => {
+                                    registration.showNotification(notif.title, {
+                                        body: notif.message,
+                                        requireInteraction: true,
+                                        icon: "/favicon.ico",
+                                        tag: notif.id // Use tag so we can reference it later to close it programmatically
+                                    });
+                                });
+                                // Mark it in registry so we don't keep firing it
+                                window.osNotificationRegistry[notif.id] = true;
+                            }
+                        }
                     }
                 });
 
                 // Programmatically close any notifications that are no longer active/urgent (e.g. marked as Done)
                 Object.keys(window.osNotificationRegistry).forEach(id => {
                     if (!currentUrgentIds.has(id)) {
-                        if (window.osNotificationRegistry[id] && typeof window.osNotificationRegistry[id].close === 'function') {
-                            window.osNotificationRegistry[id].close();
+                        const notifRef = window.osNotificationRegistry[id];
+                        // Desktop close
+                        if (notifRef && typeof notifRef.close === 'function') {
+                            notifRef.close();
+                        }
+                        // Mobile service worker close
+                        else if (notifRef === true && 'serviceWorker' in navigator) {
+                            navigator.serviceWorker.ready.then(reg => {
+                                reg.getNotifications({ tag: id }).then(activeNotifs => {
+                                    activeNotifs.forEach(n => n.close());
+                                });
+                            });
                         }
                         delete window.osNotificationRegistry[id];
                     }
@@ -147,7 +174,15 @@ export default function BellNotification({ isCollapsed, alignRight }) {
                 if (promise && promise.then) {
                     promise.then(permission => {
                         if (permission === 'granted') {
-                            new Notification("mytask Workspace", { body: "Push Notifications enabled successfully!" });
+                            try {
+                                new Notification("mytask Workspace", { body: "Push Notifications enabled successfully!" });
+                            } catch (e) {
+                                if ('serviceWorker' in navigator) {
+                                    navigator.serviceWorker.ready.then(reg => {
+                                        reg.showNotification("mytask Workspace", { body: "Push Notifications enabled successfully!" });
+                                    });
+                                }
+                            }
                         }
                     }).catch(() => { });
                 }
