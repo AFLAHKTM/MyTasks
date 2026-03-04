@@ -106,6 +106,7 @@ export default function Sidebar() {
                 <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                     <NavLink
                         to="/create-task"
+                        className="mobile-hidden"
                         style={({ isActive }) => ({
                             display: 'flex', alignItems: 'center', gap: '0.75rem',
                             justifyContent: isCollapsed ? 'center' : 'flex-start',
@@ -123,6 +124,7 @@ export default function Sidebar() {
                     </NavLink>
                     <NavLink
                         to="/settings"
+                        className="mobile-hidden"
                         style={({ isActive }) => ({
                             display: 'flex', alignItems: 'center', gap: '0.75rem',
                             justifyContent: isCollapsed ? 'center' : 'flex-start',
@@ -140,6 +142,7 @@ export default function Sidebar() {
                     </NavLink>
                     <button
                         onClick={toggleTheme}
+                        className="mobile-hidden"
                         style={{
                             display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%',
                             justifyContent: isCollapsed ? 'center' : 'flex-start',

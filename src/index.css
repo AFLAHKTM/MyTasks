@@ -756,7 +756,8 @@ p {
   }
 
   /* Hide the text labels "Workspace" and "Actions" */
-  .sidebar-nav-container>div {
+  .sidebar-nav-container>div,
+  .sidebar-nav-container .mobile-hidden {
     display: none !important;
   }
 
