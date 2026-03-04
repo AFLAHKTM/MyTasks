@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, AlertCircle, Clock, Calendar } from 'lucide-react';
+import { Bell, AlertCircle, Clock, Calendar, CheckCircle2 } from 'lucide-react';
 import { getTasks } from '../lib/data';
 
 export default function BellNotification({ isCollapsed, alignRight }) {
     const [isOpen, setIsOpen] = useState(false);
     const [notifications, setNotifications] = useState([]);
+    const [unreadCount, setUnreadCount] = useState(0);
     const dropdownRef = useRef(null);
 
     const loadNotifications = () => {
@@ -27,7 +28,9 @@ export default function BellNotification({ isCollapsed, alignRight }) {
                         type: 'overdue',
                         title: 'Task Overdue!',
                         message: `"${task.title || 'Untitled'}" was due ${dueDate.toLocaleDateString()}`,
-                        icon: <AlertCircle size={14} color="var(--danger)" />
+                        icon: <AlertCircle size={18} color="var(--danger)" />,
+                        bgColor: 'var(--card-red-bg)',
+                        time: 'Overdue'
                     });
                 } else if (dueDate.getTime() === now.getTime()) {
                     notifs.push({
@@ -35,7 +38,9 @@ export default function BellNotification({ isCollapsed, alignRight }) {
                         type: 'today',
                         title: 'Due Today',
                         message: `"${task.title || 'Untitled'}" is due today.`,
-                        icon: <Calendar size={14} color="var(--accent-primary)" />
+                        icon: <Calendar size={18} color="var(--accent-primary)" />,
+                        bgColor: 'var(--card-blue-bg)',
+                        time: 'Today'
                     });
                 }
             }
@@ -46,83 +51,82 @@ export default function BellNotification({ isCollapsed, alignRight }) {
                     type: 'progress',
                     title: 'In Progress',
                     message: `"${task.title || 'Untitled'}" is currently active.`,
-                    icon: <Clock size={14} color="var(--badge-blue-text)" />
+                    icon: <Clock size={18} color="var(--warning)" />,
+                    bgColor: 'var(--card-yellow-bg)',
+                    time: 'Active'
                 });
             }
         });
 
-        // Add a generic welcome/working notification if empty
-        if (notifs.length === 0) {
-            notifs.push({
-                id: 'system-ready',
-                type: 'system',
-                title: 'All caught up!',
-                message: 'You have no urgent tasks. Great job!',
-                icon: <Bell size={14} color="var(--success)" />
-            });
-        }
-
         setNotifications(notifs);
+        setUnreadCount(notifs.filter(n => n.type === 'overdue' || n.type === 'today').length);
 
         // Native OS / Mobile Notification Panel Push
         try {
-            // Keep a registry on the window object to track instantiated notifications
             if (!window.osNotificationRegistry) {
                 window.osNotificationRegistry = {};
             }
 
             const urgentNotifs = notifs.filter(n => n.type === 'overdue' || n.type === 'today' || n.type === 'progress');
 
+            // Dispatch custom in-app chrome toast for every urgent notif that hasn't alarmed yet.
+            if (!window.chromeToastRegistry) {
+                window.chromeToastRegistry = {};
+            }
+            urgentNotifs.forEach(notif => {
+                if (!window.chromeToastRegistry[notif.id]) {
+                    if (typeof window !== 'undefined') {
+                        window.dispatchEvent(new CustomEvent('showChromeToast', {
+                            detail: {
+                                ...notif,
+                                domain: (window.location.host && window.location.host !== '') ? window.location.host : 'mydailytasks.pages.dev'
+                            }
+                        }));
+                    }
+                    window.chromeToastRegistry[notif.id] = true;
+                }
+            });
+
             if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === "granted") {
                 const currentUrgentIds = new Set(urgentNotifs.map(n => n.id));
 
-                // Create new persistent notifications for active tasks
                 urgentNotifs.forEach(notif => {
                     if (!window.osNotificationRegistry[notif.id]) {
                         try {
                             const notification = new Notification(notif.title, {
                                 body: notif.message,
-                                requireInteraction: true, // Specific requirement: stays in notification bar until task is no longer urgent/completed
+                                requireInteraction: true,
                                 icon: "/favicon.ico"
                             });
 
-                            // Click behavior: focus window
                             notification.onclick = () => {
                                 window.focus();
-                                notification.close(); // Close on click if user acts on it
+                                notification.close();
                             };
 
-                            // Store reference to programmatically close it later
                             window.osNotificationRegistry[notif.id] = notification;
                         } catch (err) {
-                            // On Mobile (like Android Chrome), 'new Notification()' throws a TypeError.
-                            // We need to use service workers instead.
                             if ('serviceWorker' in navigator) {
                                 navigator.serviceWorker.ready.then(registration => {
                                     registration.showNotification(notif.title, {
                                         body: notif.message,
                                         requireInteraction: true,
                                         icon: "/favicon.ico",
-                                        tag: notif.id // Use tag so we can reference it later to close it programmatically
+                                        tag: notif.id
                                     });
                                 });
-                                // Mark it in registry so we don't keep firing it
                                 window.osNotificationRegistry[notif.id] = true;
                             }
                         }
                     }
                 });
 
-                // Programmatically close any notifications that are no longer active/urgent (e.g. marked as Done)
                 Object.keys(window.osNotificationRegistry).forEach(id => {
                     if (!currentUrgentIds.has(id)) {
                         const notifRef = window.osNotificationRegistry[id];
-                        // Desktop close
                         if (notifRef && typeof notifRef.close === 'function') {
                             notifRef.close();
-                        }
-                        // Mobile service worker close
-                        else if (notifRef === true && 'serviceWorker' in navigator) {
+                        } else if (notifRef === true && 'serviceWorker' in navigator) {
                             navigator.serviceWorker.ready.then(reg => {
                                 reg.getNotifications({ tag: id }).then(activeNotifs => {
                                     activeNotifs.forEach(n => n.close());
@@ -139,14 +143,12 @@ export default function BellNotification({ isCollapsed, alignRight }) {
     };
 
     useEffect(() => {
-        const handleDataSync = () => {
-            loadNotifications();
-        };
-        handleDataSync();
+        loadNotifications();
+        const handleDataSync = () => loadNotifications();
+
         window.addEventListener('appDataChanged', handleDataSync);
         window.addEventListener('storage', handleDataSync);
 
-        // Setup a rough click-outside listener
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setIsOpen(false);
@@ -161,11 +163,8 @@ export default function BellNotification({ isCollapsed, alignRight }) {
         };
     }, []);
 
-    // Refresh notifications when opening
     const toggleDropdown = () => {
-        if (!isOpen) {
-            loadNotifications();
-        }
+        if (!isOpen) loadNotifications();
         setIsOpen(!isOpen);
 
         try {
@@ -192,99 +191,66 @@ export default function BellNotification({ isCollapsed, alignRight }) {
         }
     };
 
-    const urgentCount = notifications.filter(n => n.type === 'overdue' || n.type === 'today').length;
-
     return (
         <div style={{ position: 'relative' }} ref={dropdownRef}>
             <button
                 onClick={toggleDropdown}
-                style={{
-                    background: 'var(--bg-secondary)',
-                    border: '1px solid var(--border-color)',
-                    color: 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    padding: '0.4rem',
-                    borderRadius: '50%',
-                    position: 'relative',
-                    transition: 'all 0.2s ease',
-                    marginTop: isCollapsed ? '1rem' : '0'
-                }}
-                onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent-primary)'; e.currentTarget.style.borderColor = 'var(--accent-primary)'; }}
-                onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+                className={`notif-btn ${isOpen ? 'active' : ''}`}
+                style={{ marginTop: isCollapsed ? '1rem' : '0' }}
             >
-                <Bell size={18} />
-                {urgentCount > 0 && (
-                    <div style={{
-                        position: 'absolute',
-                        top: '-2px',
-                        right: '-2px',
-                        width: '10px',
-                        height: '10px',
-                        backgroundColor: 'var(--danger)',
-                        borderRadius: '50%',
-                        border: '2px solid var(--bg-primary)'
-                    }}></div>
-                )}
+                <Bell size={20} className={unreadCount > 0 ? 'notif-ring' : ''} />
+                {unreadCount > 0 && <div className="notif-indicator"></div>}
             </button>
 
             {isOpen && (
-                <div style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 10px)',
-                    left: alignRight ? 'auto' : (isCollapsed ? '100%' : '0'),
-                    right: alignRight ? '-10px' : 'auto',
-                    marginLeft: isCollapsed ? '10px' : '0',
-                    width: alignRight ? 'calc(100vw - 40px)' : '300px',
-                    maxWidth: alignRight ? '350px' : 'none',
-                    maxHeight: '400px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    background: 'var(--bg-tertiary)',
-                    border: '1px solid var(--border-color)',
-                    backdropFilter: 'blur(16px) saturate(180%)',
-                    WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-                    borderRadius: 'var(--radius-md)',
-                    boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5)',
-                    zIndex: 2000,
-                    overflow: 'hidden'
-                }}>
-                    <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.02)' }}>
-                        <h4 style={{ margin: 0, fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>Notifications</h4>
+                <div
+                    className={`notif-dropdown ${alignRight ? 'mobile-align-right' : ''}`}
+                    style={{
+                        left: alignRight ? 'auto' : (isCollapsed ? '100%' : '0'),
+                        right: alignRight ? '-10px' : 'auto',
+                        marginLeft: isCollapsed ? '10px' : '0',
+                        width: alignRight ? '350px' : '320px',
+                    }}
+                >
+                    <div className="notif-header">
+                        <h4 className="notif-title">Notifications</h4>
+                        {notifications.length > 0 && (
+                            <span className="notif-count-badge">
+                                {notifications.length} New
+                            </span>
+                        )}
                     </div>
 
-                    <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column' }} className="custom-scrollbar">
-                        {notifications.map(notif => (
-                            <div key={notif.id} style={{
-                                padding: '0.75rem 1rem',
-                                borderBottom: '1px solid var(--border-color)',
-                                display: 'flex',
-                                gap: '0.75rem',
-                                alignItems: 'flex-start',
-                                transition: 'background-color 0.2s',
-                                cursor: 'default'
-                            }}
-                                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
-                                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                            >
-                                <div style={{
-                                    padding: '0.4rem',
-                                    borderRadius: '50%',
-                                    background: 'var(--bg-primary)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0,
-                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                                }}>
-                                    {notif.icon}
+                    <div className="notif-list custom-scrollbar">
+                        {notifications.length > 0 ? (
+                            notifications.map(notif => (
+                                <div key={notif.id} className={`notif-item ${notif.type}`}>
+                                    <div
+                                        className="notif-icon-wrapper"
+                                        style={{ background: notif.bgColor }}
+                                    >
+                                        {notif.icon}
+                                    </div>
+                                    <div className="notif-content">
+                                        <div className="notif-item-header">
+                                            <span className="notif-item-title">{notif.title}</span>
+                                            <span className="notif-item-time">{notif.time}</span>
+                                        </div>
+                                        <span className="notif-item-message">{notif.message}</span>
+                                    </div>
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }}>{notif.title}</span>
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>{notif.message}</span>
+                            ))
+                        ) : (
+                            <div className="notif-empty">
+                                <div className="notif-empty-icon">
+                                    <CheckCircle2 size={32} />
+                                </div>
+                                <div>
+                                    <div className="notif-empty-title">All caught up!</div>
+                                    <div className="notif-empty-message">You have no pending tasks or updates.</div>
                                 </div>
                             </div>
-                        ))}
+                        )}
                     </div>
                 </div>
             )}

@@ -3,6 +3,7 @@ import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import MobileHeader from './components/MobileHeader';
 import AIAssistant from './components/AIAssistant';
+import ChromeToast from './components/ChromeToast';
 import { initDB } from './lib/data';
 
 import Home from './pages/Home';
@@ -44,6 +45,7 @@ export default function App() {
           </Routes>
         </main>
         <AIAssistant />
+        <ChromeToast />
       </div>
     </Router>
   );
