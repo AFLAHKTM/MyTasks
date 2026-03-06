@@ -87,56 +87,6 @@ export default function BellNotification({ isCollapsed, alignRight }) {
                 }
             });
 
-            if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === "granted") {
-                const currentUrgentIds = new Set(urgentNotifs.map(n => n.id));
-
-                urgentNotifs.forEach(notif => {
-                    if (!window.osNotificationRegistry[notif.id]) {
-                        try {
-                            const notification = new Notification(notif.title, {
-                                body: notif.message,
-                                requireInteraction: true,
-                                icon: "/favicon.ico"
-                            });
-
-                            notification.onclick = () => {
-                                window.focus();
-                                notification.close();
-                            };
-
-                            window.osNotificationRegistry[notif.id] = notification;
-                        } catch (err) {
-                            if ('serviceWorker' in navigator) {
-                                navigator.serviceWorker.ready.then(registration => {
-                                    registration.showNotification(notif.title, {
-                                        body: notif.message,
-                                        requireInteraction: true,
-                                        icon: "/favicon.ico",
-                                        tag: notif.id
-                                    });
-                                });
-                                window.osNotificationRegistry[notif.id] = true;
-                            }
-                        }
-                    }
-                });
-
-                Object.keys(window.osNotificationRegistry).forEach(id => {
-                    if (!currentUrgentIds.has(id)) {
-                        const notifRef = window.osNotificationRegistry[id];
-                        if (notifRef && typeof notifRef.close === 'function') {
-                            notifRef.close();
-                        } else if (notifRef === true && 'serviceWorker' in navigator) {
-                            navigator.serviceWorker.ready.then(reg => {
-                                reg.getNotifications({ tag: id }).then(activeNotifs => {
-                                    activeNotifs.forEach(n => n.close());
-                                });
-                            });
-                        }
-                        delete window.osNotificationRegistry[id];
-                    }
-                });
-            }
         } catch (error) {
             console.warn("OS Push Notifications skipped or unsupported:", error);
         }

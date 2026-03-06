@@ -1,10 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import MobileHeader from './components/MobileHeader';
 import AIAssistant from './components/AIAssistant';
 import ChromeToast from './components/ChromeToast';
-import { initDB } from './lib/data';
+import MobileNav from './components/MobileNav';
+
+import { initDB, getWorkspaceConfig } from './lib/data';
 
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
@@ -17,12 +19,20 @@ import Settings from './pages/Settings';
 import Completed from './pages/Completed';
 
 export default function App() {
+  const [config, setConfig] = useState(getWorkspaceConfig());
+
   useEffect(() => {
     initDB();
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme) {
       document.documentElement.setAttribute('data-theme', savedTheme);
     }
+
+    const handleDataSync = () => {
+      setConfig(getWorkspaceConfig());
+    };
+    window.addEventListener('appDataChanged', handleDataSync);
+    return () => window.removeEventListener('appDataChanged', handleDataSync);
   }, []);
 
   return (
@@ -44,8 +54,9 @@ export default function App() {
             <Route path="/settings" element={<Settings />} />
           </Routes>
         </main>
-        <AIAssistant />
+        {config.enable_ai_assistant && <AIAssistant />}
         <ChromeToast />
+        <MobileNav />
       </div>
     </Router>
   );

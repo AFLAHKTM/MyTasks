@@ -58,7 +58,7 @@ export default function AIAssistant() {
     };
 
     return (
-        <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+        <div className="ai-assistant-wrapper" style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
             {isOpen && (
                 <div style={{
                     width: '350px',
@@ -95,7 +95,7 @@ export default function AIAssistant() {
                                 <Sparkles size={16} />
                             </div>
                             <div>
-                                <h3 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'white', margin: 0 }}>mytask.ai</h3>
+                                <h3 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'white', margin: 0 }}>My Own Task AI</h3>
                                 <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)', margin: 0 }}>Workspace Assistant</p>
                             </div>
                         </div>

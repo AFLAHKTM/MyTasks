@@ -6,6 +6,11 @@ self.addEventListener('activate', (event) => {
     event.waitUntil(self.clients.claim());
 });
 
+self.addEventListener('fetch', (event) => {
+    // Provide a basic fetch handler to satisfy PWA install requirements
+    event.respondWith(fetch(event.request).catch(() => new Response("Network error")));
+});
+
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     event.waitUntil(

@@ -1,27 +1,25 @@
 import { v4 as uuidv4 } from 'uuid';
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = 'https://gdaranarqbgdsfdbkxbt.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYXJhbmFycWJnZHNmZGJreGJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1OTMwODQsImV4cCI6MjA4NzE2OTA4NH0.lbx-gL4xhbpkakUkV05GGNLX9MH1-bWp9h_pmtIXDMc';
+const SUPABASE_URL = 'https://zgxulqlhvctazxapqtvk.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpneHVscWxodmN0YXp4YXBxdHZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1ODg2MTYsImV4cCI6MjA4ODE2NDYxNn0.tlCVE96oQLFa-enBtAKh125UCdwET5Kt8ImRBnBho2A';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const DB_KEY = 'antigravity_tasks_db';
 const DB_STATUSES_KEY = 'antigravity_statuses';
 const DB_PRIORITIES_KEY = 'antigravity_priorities';
-const DB_VERSION_KEY = 'antigravity_version';
 
-let myInstanceId = uuidv4();
+const DB_CONFIG_KEY = 'antigravity_workspace_config';
 
-const getLocalVersion = () => {
-  return parseInt(localStorage.getItem(DB_VERSION_KEY) || '0', 10);
-};
-
-const setLocalVersion = (v) => {
-  localStorage.setItem(DB_VERSION_KEY, v.toString());
+const DEFAULT_CONFIG = {
+  enable_ai_assistant: true,
+  auto_archive_tasks: false,
+  sync_system_clock: true
 };
 
 const DEFAULT_TASKS = [
+  // ... (keep existing)
   {
     id: uuidv4(),
     title: 'FM META AD CREATE',
@@ -74,6 +72,7 @@ const DEFAULT_STATUSES = [
 const DEFAULT_PRIORITIES = [
   { name: '', color: 'badge-gray', isDefault: true },
   { name: 'Low', color: 'badge-green' },
+  { name: 'Medium', color: 'badge-yellow' },
   { name: 'High', color: 'badge-red' }
 ];
 
@@ -81,87 +80,96 @@ export const dispatchDataUpdate = () => {
   window.dispatchEvent(new Event('appDataChanged'));
 };
 
-const broadcastChannel = supabase.channel('mytask-sync', {
-  config: {
-    broadcast: { ack: false }
+// --- Sync Logic ---
+
+const syncFromSupabase = async () => {
+  try {
+    const [tasksRes, statusesRes, prioritiesRes, configRes] = await Promise.all([
+      supabase.from('tasks').select('*'),
+      supabase.from('statuses').select('*'),
+      supabase.from('priorities').select('*'),
+      supabase.from('workspace_config').select('*').eq('id', 'default').single()
+    ]);
+
+    if (tasksRes.data) {
+      localStorage.setItem(DB_KEY, JSON.stringify(tasksRes.data));
+    }
+    if (statusesRes.data && statusesRes.data.length > 0) {
+      localStorage.setItem(DB_STATUSES_KEY, JSON.stringify(statusesRes.data.map(s => ({ name: s.name, color: s.color, isDefault: s.is_default }))));
+    }
+    if (prioritiesRes.data && prioritiesRes.data.length > 0) {
+      localStorage.setItem(DB_PRIORITIES_KEY, JSON.stringify(prioritiesRes.data.map(p => ({ name: p.name, color: p.color, isDefault: p.is_default }))));
+    }
+    if (configRes.data) {
+      localStorage.setItem(DB_CONFIG_KEY, JSON.stringify({
+        enable_ai_assistant: configRes.data.enable_ai_assistant,
+        auto_archive_tasks: configRes.data.auto_archive_tasks,
+        sync_system_clock: configRes.data.sync_system_clock
+      }));
+    }
+
+    dispatchDataUpdate();
+  } catch (error) {
+    console.error('Error syncing from Supabase:', error);
   }
-});
-
-broadcastChannel
-  .on('broadcast', { event: 'full_sync' }, (payload) => {
-    const incomingVersion = payload.payload.version;
-    const localVersion = getLocalVersion();
-    // Apply the sync payload unconditionally if it claims to be newer 
-    if (incomingVersion > localVersion) {
-      localStorage.setItem(DB_KEY, JSON.stringify(payload.payload.tasks));
-      localStorage.setItem(DB_STATUSES_KEY, JSON.stringify(payload.payload.statuses));
-      localStorage.setItem(DB_PRIORITIES_KEY, JSON.stringify(payload.payload.priorities));
-      setLocalVersion(incomingVersion);
-      dispatchDataUpdate();
-    }
-  })
-  .on('broadcast', { event: 'request_sync' }, (payload) => {
-    if (payload.payload.instanceId !== myInstanceId) {
-      sendFullSync();
-    }
-  })
-  .subscribe((status) => {
-    if (status === 'SUBSCRIBED') {
-      broadcastChannel.send({
-        type: 'broadcast',
-        event: 'request_sync',
-        payload: { instanceId: myInstanceId }
-      }).catch(() => { });
-    }
-  });
-
-const sendFullSync = () => {
-  const tasks = getTasks();
-  const statuses = getStatuses();
-  const priorities = getPriorities();
-  const version = getLocalVersion();
-
-  broadcastChannel.send({
-    type: 'broadcast',
-    event: 'full_sync',
-    payload: {
-      tasks,
-      statuses,
-      priorities,
-      version
-    }
-  }).catch(() => { });
 };
 
-const incrementVersionAndSync = () => {
-  const newVersion = getLocalVersion() + 1;
-  setLocalVersion(newVersion);
-  dispatchDataUpdate();
-  sendFullSync();
+// Subscribe to real-time changes
+const subscribeToChanges = () => {
+  supabase
+    .channel('db-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => syncFromSupabase())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'statuses' }, () => syncFromSupabase())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'priorities' }, () => syncFromSupabase())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'workspace_config' }, () => syncFromSupabase())
+    .subscribe();
 };
 
-export const initDB = () => {
+export const initDB = async () => {
   const existingTasks = localStorage.getItem(DB_KEY);
-  let initialized = false;
-
-  if (!existingTasks) {
-    localStorage.setItem(DB_KEY, JSON.stringify(DEFAULT_TASKS));
-    initialized = true;
-  }
   const existingStatuses = localStorage.getItem(DB_STATUSES_KEY);
-  if (!existingStatuses) {
-    localStorage.setItem(DB_STATUSES_KEY, JSON.stringify(DEFAULT_STATUSES));
-    initialized = true;
-  }
   const existingPriorities = localStorage.getItem(DB_PRIORITIES_KEY);
-  if (!existingPriorities) {
-    localStorage.setItem(DB_PRIORITIES_KEY, JSON.stringify(DEFAULT_PRIORITIES));
-    initialized = true;
+  const existingConfig = localStorage.getItem(DB_CONFIG_KEY);
+
+  // 1. Initial Local Setup if empty
+  if (!existingTasks) localStorage.setItem(DB_KEY, JSON.stringify(DEFAULT_TASKS));
+  if (!existingStatuses) localStorage.setItem(DB_STATUSES_KEY, JSON.stringify(DEFAULT_STATUSES));
+  if (!existingPriorities) localStorage.setItem(DB_PRIORITIES_KEY, JSON.stringify(DEFAULT_PRIORITIES));
+  if (!existingConfig) localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(DEFAULT_CONFIG));
+
+  // 2. Initial fetch from Supabase
+  await syncFromSupabase();
+
+  // 3. Migration: If Supabase is empty but we have local data, push to Supabase
+  const { data: dbTasks } = await supabase.from('tasks').select('id').limit(1);
+  if (!dbTasks || dbTasks.length === 0) {
+    console.log('Supabase is empty. Migrating local data...');
+    const tasks = getTasks();
+    const statuses = getStatuses();
+    const priorities = getPriorities();
+
+    if (tasks.length > 0) await supabase.from('tasks').insert(tasks.map(t => ({ ...t })));
+    if (statuses.length > 0) await supabase.from('statuses').insert(statuses.map(s => ({ name: s.name, color: s.color, is_default: s.isDefault })));
+    if (priorities.length > 0) await supabase.from('priorities').insert(priorities.map(p => ({ name: p.name, color: p.color, is_default: p.isDefault })));
+
+    await syncFromSupabase(); // Get them back with DB IDs if any (though we use UUIDs)
   }
 
-  if (initialized) {
-    incrementVersionAndSync();
-  }
+  // 4. Start listening for changes
+  subscribeToChanges();
+};
+
+export const getWorkspaceConfig = () => {
+  const data = localStorage.getItem(DB_CONFIG_KEY);
+  return data ? JSON.parse(data) : DEFAULT_CONFIG;
+};
+
+export const saveWorkspaceConfig = (config) => {
+  localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(config));
+  dispatchDataUpdate();
+
+  // Update Supabase
+  supabase.from('workspace_config').update(config).eq('id', 'default').then(() => { });
 };
 
 export const getStatuses = () => {
@@ -171,7 +179,11 @@ export const getStatuses = () => {
 
 export const saveStatuses = (statuses) => {
   localStorage.setItem(DB_STATUSES_KEY, JSON.stringify(statuses));
-  incrementVersionAndSync();
+  dispatchDataUpdate();
+
+  // Update Supabase
+  supabase.from('statuses').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+    .then(() => supabase.from('statuses').insert(statuses.map(s => ({ name: s.name, color: s.color, is_default: !!s.isDefault }))));
 };
 
 export const getPriorities = () => {
@@ -181,7 +193,10 @@ export const getPriorities = () => {
 
 export const savePriorities = (priorities) => {
   localStorage.setItem(DB_PRIORITIES_KEY, JSON.stringify(priorities));
-  incrementVersionAndSync();
+  dispatchDataUpdate();
+
+  supabase.from('priorities').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+    .then(() => supabase.from('priorities').insert(priorities.map(p => ({ name: p.name, color: p.color, is_default: !!p.isDefault }))));
 };
 
 export const getTasks = () => {
@@ -194,15 +209,20 @@ export const getTask = (id) => {
 };
 
 export const createTask = (taskData) => {
-  const tasks = getTasks();
   const newTask = {
     ...taskData,
     id: uuidv4(),
     created_at: new Date().toISOString()
   };
+
+  const tasks = getTasks();
   tasks.push(newTask);
   localStorage.setItem(DB_KEY, JSON.stringify(tasks));
-  incrementVersionAndSync();
+  dispatchDataUpdate();
+
+  // Save to Supabase
+  supabase.from('tasks').insert([newTask]).then(() => { });
+
   return newTask;
 };
 
@@ -212,7 +232,11 @@ export const updateTask = (id, updates) => {
   if (idx !== -1) {
     tasks[idx] = { ...tasks[idx], ...updates };
     localStorage.setItem(DB_KEY, JSON.stringify(tasks));
-    incrementVersionAndSync();
+    dispatchDataUpdate();
+
+    // Save to Supabase
+    supabase.from('tasks').update(updates).eq('id', id).then(() => { });
+
     return tasks[idx];
   }
   return null;
@@ -222,5 +246,8 @@ export const deleteTask = (id) => {
   let tasks = getTasks();
   tasks = tasks.filter(t => t.id !== id);
   localStorage.setItem(DB_KEY, JSON.stringify(tasks));
-  incrementVersionAndSync();
+  dispatchDataUpdate();
+
+  // Delete from Supabase
+  supabase.from('tasks').delete().eq('id', id).then(() => { });
 };

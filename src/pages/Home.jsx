@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getTasks } from '../lib/data';
 import { NavLink } from 'react-router-dom';
 import { Activity, Plus, Calendar as CalendarIcon, ArrowRight, CheckCircle } from 'lucide-react';
-import { isSameDay, format } from 'date-fns';
+import { isSameDay, format, isPast } from 'date-fns';
 
 export default function Home() {
     const [tasks, setTasks] = useState([]);
@@ -20,7 +20,12 @@ export default function Home() {
         };
     }, []);
 
-    const todayTasks = tasks.filter(t => t.due_date && isSameDay(new Date(t.due_date), new Date()) && t.status !== 'Done');
+    const todayTasks = tasks.filter(t => {
+        if (t.status === 'Done') return false;
+        if (!t.due_date) return false;
+        const d = new Date(t.due_date);
+        return isSameDay(d, new Date()) || d < new Date();
+    }).sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
     const total = tasks.length;
     const completed = tasks.filter(t => t.status === 'Done').length;
     const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -48,7 +53,7 @@ export default function Home() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {todayTasks.length === 0 ? (
                             <div style={{ padding: '2.5rem 1rem', textAlign: 'center', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--border-hover)' }}>
-                                <CheckCircle size={32} color="var(--success)" style={{ margin: '0 auto 1rem opacity: 0.5' }} />
+                                <CheckCircle size={32} color="var(--success)" style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
                                 <p style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>No pending tasks for today.</p>
                                 <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)', marginTop: '0.25rem' }}>Enjoy your free time!</p>
                             </div>
@@ -57,7 +62,11 @@ export default function Home() {
                                 <NavLink key={task.id} to={`/tasks/${task.id}`} className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'box-shadow 0.2s, transform 0.2s', textDecoration: 'none', ':hover': { transform: 'translateY(-2px)' } }}>
                                     <div>
                                         <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>{task.title}</h3>
-                                        <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                                            {isPast(new Date(task.due_date)) && !isSameDay(new Date(task.due_date), new Date()) && (
+                                                <span style={{ color: 'var(--danger)', fontWeight: 700, backgroundColor: 'var(--badge-red-bg)', padding: '2px 6px', borderRadius: '4px' }}>OVERDUE</span>
+                                            )}
+                                            {task.due_date && <span>📅 {format(new Date(task.due_date), 'MMM d')}</span>}
                                             {task.assignee && <span>👤 {task.assignee}</span>}
                                             {task.priority === 'High' && <span style={{ color: 'var(--danger)', fontWeight: 500 }}>High Priority</span>}
                                         </div>

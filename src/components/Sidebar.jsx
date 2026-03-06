@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, CheckSquare, PlusSquare, Calendar, Users, Settings as SettingsIcon, Archive, Sun, Moon, ChevronLeft, ChevronRight } from 'lucide-react';
 import BellNotification from './BellNotification';
+import InstallAppBtn from './InstallAppBtn';
+import SyncIndicator from './SyncIndicator';
 import logo from '../assets/logo.png';
 
 export default function Sidebar() {
@@ -41,12 +43,12 @@ export default function Sidebar() {
     return (
         <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`} style={{ transition: 'width 0.2s', width: isCollapsed ? '72px' : '250px' }}>
             <div className="sidebar-header" style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: isCollapsed ? 'center' : 'space-between', height: '72px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <NavLink to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
                     <div style={{ width: '32px', height: '32px', display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0 }}>
                         <img src={logo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                     </div>
-                    {!isCollapsed && <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '1rem', whiteSpace: 'nowrap' }}>mytask</span>}
-                </div>
+                    {!isCollapsed && <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '1rem', whiteSpace: 'nowrap' }}>My Own Task</span>}
+                </NavLink>
                 {!isCollapsed && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <BellNotification isCollapsed={false} />
@@ -162,11 +164,15 @@ export default function Sidebar() {
                         </div>
                         {!isCollapsed && (isDark ? 'Light Mode' : 'Dark Mode')}
                     </button>
+                    <InstallAppBtn isCollapsed={isCollapsed} />
                 </nav>
             </div>
 
-            <div className="sidebar-footer" style={{ display: 'none' }}>
-                {/* Moved inside nav container for mobile access */}
+            <div className="sidebar-footer" style={{ padding: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: isCollapsed ? 'center' : 'flex-start' }}>
+                {!isCollapsed && <SyncIndicator />}
+                {isCollapsed && (
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--success)', boxShadow: '0 0 8px var(--success)' }} title="Sync System Online"></div>
+                )}
             </div>
         </aside>
     );

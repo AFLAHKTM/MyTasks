@@ -477,6 +477,159 @@ p {
   background: var(--bg-secondary);
 }
 
+/* Date Picker Styles */
+.date-picker-popup {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  /* Align to right edge so it grows left into the panel */
+  margin-top: 0.5rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 1rem;
+  width: 300px;
+  z-index: 5000;
+  font-family: var(--font-sans);
+}
+
+
+[data-theme='dark'] .date-picker-popup {
+  background: rgba(23, 23, 23, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.calendar-day-label {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  text-align: center;
+  padding: 0.5rem 0;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-primary);
+}
+
+.calendar-day:hover {
+  background: var(--bg-tertiary);
+}
+
+.calendar-day.other-month {
+  color: var(--text-tertiary);
+  opacity: 0.5;
+}
+
+.calendar-day.today {
+  color: var(--accent-primary);
+  font-weight: 700;
+  background: var(--accent-light);
+}
+
+.calendar-day.selected {
+  background: var(--accent-primary) !important;
+  color: white !important;
+}
+
+.date-picker-footer {
+  border-top: 1px solid var(--border-color);
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.datepicker-toggle-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.datepicker-btn-clear {
+  width: 100%;
+  padding: 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.datepicker-btn-clear:hover {
+  background: var(--bg-tertiary);
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 34px;
+  height: 20px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--border-color);
+  transition: .4s;
+  border-radius: 20px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked+.slider {
+  background-color: var(--accent-primary);
+}
+
+input:checked+.slider:before {
+  transform: translateX(14px);
+}
+
+
 .task-card {
   padding: 0.75rem;
   margin-bottom: 0.5rem;
@@ -729,6 +882,15 @@ p {
   /* Windows 11 font */
   animation: toast-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   color: #fff;
+  z-index: 3000;
+}
+
+.desktop-hide {
+  display: none !important;
+}
+
+.mobile-only-action {
+  display: none !important;
 }
 
 @media (max-width: 768px) {
@@ -1109,11 +1271,20 @@ p {
   color: var(--text-secondary);
 }
 
+.task-detail-container {
+  padding-bottom: 250px !important;
+  /* Ensure absolute calendar has space on desktop */
+}
+
 /* ================================================== 
    📱 MOBILE RESPONSIVENESS (iOS / Android Devices)
    ================================================== */
 
 .mobile-header {
+  display: none;
+}
+
+.mobile-nav-wrapper {
   display: none;
 }
 
@@ -1130,102 +1301,161 @@ p {
   }
 
   /* Restructure main layout */
+  /* Layout Adjustments */
   .app-layout {
     flex-direction: column;
     height: 100dvh;
+    overflow: hidden;
   }
 
-  /* Morph Sidebar into a Fixed Mobile Bottom Action Bar */
+  /* Hide Sidebar on mobile */
   .sidebar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100% !important;
-    height: 65px !important;
-    flex-direction: row !important;
-    border-right: none;
-    border-top: 1px solid var(--border-color);
-    background-color: var(--bg-secondary);
-    z-index: 1000;
-    overflow: visible;
-    padding: 0;
-    margin: 0;
-  }
-
-  /* Hide Headers/Footers */
-  .sidebar-header,
-  .sidebar-collapsed-actions,
-  .sidebar-footer {
     display: none !important;
   }
 
-  /* Align Navigation horizontal with horizontal scrolling */
-  .sidebar-nav-container {
-    display: flex !important;
-    flex-direction: row !important;
-    width: 100%;
-    padding: 0 !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    -webkit-overflow-scrolling: touch;
-    white-space: nowrap;
-  }
-
-  /* Hide the text labels "Workspace" and "Actions" */
-  .sidebar-nav-container>div,
-  .sidebar-nav-container .mobile-hidden {
-    display: none !important;
-  }
-
-  /* All nav blocks (both main and actions) displayed side-by-side */
-  .sidebar-nav-container>nav {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center;
-    padding: 0;
-    gap: 0;
-  }
-
-  /* Clean up Nav Links for purely Icon-Based Bottom touches */
-  .sidebar nav a {
-    font-size: 0 !important;
-    padding: 1.25rem 1rem !important;
-    background: transparent !important;
-    justify-content: center !important;
-    border-radius: 0 !important;
-    min-width: 60px;
-  }
-
-  .sidebar nav a>div {
-    display: flex;
-  }
-
-  .sidebar nav a svg {
-    width: 24px !important;
-    height: 24px !important;
-  }
-
-  /* Page Formatting */
+  /* Main Content Padding for Bottom Nav */
   .main-content {
-    padding-bottom: 75px;
+    padding-bottom: 90px !important;
+    overflow-y: auto;
+    height: calc(100dvh - 60px);
+    /* Leave space for header */
   }
 
-  .page-container {
-    padding: 1.25rem 1rem !important;
-    padding-bottom: 2dvh !important;
+  /* Mobile Nav Styles */
+  .mobile-nav-wrapper {
+    display: block;
+    position: fixed;
+    bottom: 20px;
+    /* Floating like Monday.com */
+    left: 10px;
+    right: 10px;
+    z-index: 2000;
+    pointer-events: none;
   }
 
-  /* Make Header Headers Stack nicely */
+  .mobile-taskbar {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: #1e2127;
+    /* Dark Monday.com background */
+    height: 70px;
+    border-radius: 24px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    pointer-events: auto;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0 10px;
+  }
+
+  [data-theme='light'] .mobile-taskbar {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  }
+
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: var(--text-tertiary);
+    flex: 1;
+    gap: 4px;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    padding-top: 5px;
+  }
+
+  .mobile-nav-item.active {
+    color: #436cf0 !important;
+    /* Monday Blue */
+  }
+
+  .mobile-nav-item.active .mobile-nav-icon {
+    transform: scale(1.1);
+  }
+
+  .mobile-nav-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+  }
+
+  .mobile-fab {
+    position: absolute;
+    right: 15px;
+    bottom: 85px;
+    /* Floating above the bar */
+    width: 56px;
+    height: 56px;
+    background: #436cf0;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(67, 108, 240, 0.4);
+    pointer-events: auto;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .mobile-fab:active {
+    transform: scale(0.9);
+    box-shadow: 0 4px 12px rgba(67, 108, 240, 0.2);
+  }
+
+  /* Move AI Assistant up on mobile to avoid UI overlap */
+  .ai-assistant-wrapper {
+    bottom: 180px !important;
+    right: 15px !important;
+  }
+
+  /* Adjust FAB overlap */
+  .mobile-fab {
+    bottom: 95px;
+    right: 20px;
+  }
+
+  /* Page Header Adjustments */
   .page-header {
     flex-direction: column;
     align-items: flex-start !important;
     gap: 1rem;
     margin-bottom: 1.5rem;
+    padding: 0 1rem;
   }
+
 
   .page-header .btn {
     width: 100%;
     justify-content: center;
+  }
+
+  /* Mobile Customizations for Notifications */
+  .notif-dropdown.mobile-align-right {
+    position: fixed;
+    top: 65px;
+    left: 10px;
+    right: 10px;
+    width: auto !important;
+    max-width: none !important;
+    max-height: calc(100vh - 200px);
+    transform-origin: top;
+    z-index: 3000;
+  }
+
+  /* Grid & Table Overrides */
+  .mobile-only-action {
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .desktop-hide {
+    display: table-cell !important;
+  }
+
+  .home-dashboard-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
   }
 
   /* Dashboard Grid Overrides using inline CSS attribute selectors */
@@ -1239,37 +1469,172 @@ p {
     gap: 1.5rem !important;
   }
 
-  .home-dashboard-grid {
-    grid-template-columns: 1fr;
-  }
-
-  /* Allow Kanban items to cleanly take up the screen but slide horizontally */
+  /* Vertical Table for Mobile */
   .board-column {
-    min-width: 85vw !important;
+    min-width: 75vw !important;
   }
 
-  /* Enforce horizontal swipe-sliding for Table components */
   .table-container {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch;
-    width: 100%;
-    border-right: 0;
+    overflow-x: hidden !important;
+    padding: 0;
   }
 
   .table {
-    min-width: 800px;
+    min-width: 100% !important;
+    border: none;
+    background: transparent;
   }
 
-  /* Mobile Customizations for Notifications */
-  .notif-dropdown.mobile-align-right {
-    position: fixed;
-    top: 65px;
-    left: 10px;
-    right: 10px;
-    width: auto !important;
-    max-width: none !important;
-    max-height: calc(100vh - 160px);
-    transform-origin: top;
+  .table thead {
+    display: none;
+    /* Hide horizontal headers */
+  }
+
+  .table tbody tr {
+    display: block;
+    margin-bottom: 1.5rem;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .table tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-right: none !important;
+    text-align: right;
+  }
+
+  .table tbody td:last-child {
+    border-bottom: none;
+  }
+
+  .table tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    text-align: left;
+    flex: 1;
+  }
+
+  .table tbody td>* {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  /* Specific adjustment for long titles in vertical table */
+  .table td[data-label="Task Name"] {
+    padding-top: 0 !important;
+    padding-bottom: 1rem !important;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 0.5rem;
+  }
+
+  .table td[data-label="Task Name"]::before {
+    display: none;
+    /* Hide header for the title to make it prominent */
+  }
+
+  .table td[data-label="Task Name"] span {
+    font-size: 1.125rem;
+    text-align: left;
+    width: 100%;
+    display: block;
+  }
+
+  /* Task Detail Panel - Content Fit Fixes */
+  .task-detail-container {
+    padding: 0.5rem 0.75rem 10rem 0.75rem !important;
+    /* Massive bottom padding for calendar */
+  }
+
+  .task-detail-close {
+    margin-bottom: 0.75rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  .task-detail-title {
+    font-size: 1.25rem !important;
+    /* Even smaller title */
+    margin-bottom: 0.75rem !important;
+    line-height: 1.1;
+    padding: 0 !important;
+  }
+
+  .task-detail-fields {
+    gap: 0.35rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+
+  /* Force field grid into a single column or tighter layout on mobile */
+  .task-detail-fields>div {
+    grid-template-columns: 70px 1fr !important;
+    gap: 0.35rem !important;
+  }
+
+  .task-detail-fields span,
+  .task-detail-fields select,
+  .task-detail-fields input {
+    font-size: 0.75rem !important;
+  }
+
+  /* Date Picker Mobile Positioning & Sizing */
+  .date-picker-popup {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 85vw !important;
+    max-width: 320px !important;
+    z-index: 5000 !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6) !important;
+    padding: 0.75rem !important;
+  }
+
+  .calendar-header span {
+    font-size: 0.8rem !important;
+  }
+
+  .calendar-grid div {
+    padding: 4px 0 !important;
+    font-size: 0.75rem !important;
+  }
+
+  .date-picker-footer {
+    padding-top: 0.5rem !important;
+    margin-top: 0.5rem !important;
+  }
+
+  .datepicker-toggle-item {
+    margin-bottom: 0.4rem !important;
+    font-size: 0.7rem !important;
+  }
+
+  /* Tasks Split View (Master-Detail) on Mobile */
+  .tasks-layout-container.is-editing .tasks-main-content {
+    display: none !important;
+    /* Hide list when detail is open on mobile */
+  }
+
+  .tasks-layout-container.is-editing .tasks-detail-sidebar {
+    position: fixed !important;
+    top: 60px;
+    /* Below header */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100% !important;
     z-index: 3000;
+    padding: 1rem !important;
+    margin: 0 !important;
+    border-left: none !important;
   }
 }

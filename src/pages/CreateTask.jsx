@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createTask, getStatuses } from '../lib/data';
+import { createTask, getStatuses, getPriorities } from '../lib/data';
+import GlassDatePicker from '../components/GlassDatePicker';
+
 
 export default function CreateTask() {
     const navigate = useNavigate();
@@ -45,13 +47,14 @@ export default function CreateTask() {
                         </div>
                         <div>
                             <label className="label">Due Date</label>
-                            <input type="date" className="input" value={formData.due_date} onChange={e => setFormData({ ...formData, due_date: e.target.value })} />
+                            <GlassDatePicker value={formData.due_date} onChange={val => setFormData({ ...formData, due_date: val })} />
                         </div>
                         <div>
                             <label className="label">Priority</label>
                             <select className="input" value={formData.priority} onChange={e => setFormData({ ...formData, priority: e.target.value })}>
-                                <option value="Low">Low</option>
-                                <option value="High">High</option>
+                                {getPriorities().map(p => (
+                                    <option key={p.name} value={p.name}>{p.name || 'Empty'}</option>
+                                ))}
                             </select>
                         </div>
                         <div>

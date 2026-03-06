@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getTask, updateTask, deleteTask, getStatuses, getPriorities } from '../lib/data';
 import ReactMarkdown from 'react-markdown';
 import { FileText, Save, ArrowLeft, Trash2 } from 'lucide-react';
+import GlassDatePicker from '../components/GlassDatePicker';
+
 
 export default function TaskDetail() {
     const { id } = useParams();
@@ -13,7 +15,7 @@ export default function TaskDetail() {
 
     useEffect(() => {
         const handleDataSync = () => {
-    const t = getTask(id);
+            const t = getTask(id);
             if (t) setTask(t);
             else navigate('/tasks');
             setSystemStatuses(getStatuses());
@@ -43,8 +45,8 @@ export default function TaskDetail() {
     };
 
     return (
-        <div style={{ width: '100%', padding: '0 1rem 2rem 0' }}>
-            <button className="btn btn-secondary" style={{ marginBottom: '1.5rem', padding: '0.25rem 0.75rem', background: 'transparent', border: 'none', boxShadow: 'none', marginLeft: '-0.5rem' }} onClick={() => navigate('/tasks')}>
+        <div className="task-detail-container" style={{ width: '100%', padding: '0 1rem 2rem 0' }}>
+            <button className="btn btn-secondary task-detail-close" style={{ marginBottom: '1.5rem', padding: '0.25rem 0.75rem', background: 'transparent', border: 'none', boxShadow: 'none', marginLeft: '-0.5rem' }} onClick={() => navigate('/tasks')}>
                 <ArrowLeft size={16} /> Close Panel
             </button>
 
@@ -53,11 +55,12 @@ export default function TaskDetail() {
                     type="text"
                     value={task.title}
                     onChange={e => handleUpdate('title', e.target.value)}
+                    className="task-detail-title"
                     style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--text-primary)', border: 'none', background: 'transparent', width: '100%', outline: 'none' }}
                     placeholder="Untitled Task"
                 />
 
-                <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div className="task-detail-fields" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', alignItems: 'center' }}>
                         <span style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>Status</span>
                         <select
@@ -75,7 +78,7 @@ export default function TaskDetail() {
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', alignItems: 'center' }}>
                         <span style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>Due Date</span>
-                        <input type="date" value={task.due_date ? task.due_date.split('T')[0] : ''} onChange={e => handleUpdate('due_date', new Date(e.target.value).toISOString())} style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '0.875rem', color: 'var(--text-primary)' }} />
+                        <GlassDatePicker value={task.due_date} onChange={val => handleUpdate('due_date', val)} />
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', alignItems: 'center' }}>
                         <span style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>Priority</span>

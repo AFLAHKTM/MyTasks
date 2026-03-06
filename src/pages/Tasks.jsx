@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { getTasks, updateTask, deleteTask, createTask, getStatuses, saveStatuses, getPriorities } from '../lib/data';
 import { NavLink, useNavigate, Outlet, useMatch } from 'react-router-dom';
-import { Columns, LayoutList, Plus, MoreHorizontal, FileText, Type, Users, Calendar, AlertCircle, Maximize2, ListChecks, Edit3, ArrowUpDown } from 'lucide-react';
+import { Columns, LayoutList, Plus, MoreHorizontal, FileText, Type, Users, Calendar, AlertCircle, Maximize2, ListChecks, Edit3, ArrowUpDown, Trash2 } from 'lucide-react';
+import GlassDatePicker from '../components/GlassDatePicker';
+
 
 export default function Tasks() {
     const [tasks, setTasks] = useState([]);
@@ -19,7 +21,7 @@ export default function Tasks() {
 
     useEffect(() => {
         const handleDataSync = () => {
-    setTasks(getTasks());
+            setTasks(getTasks());
             setSystemStatuses(getStatuses());
             setSystemPriorities(getPriorities());
         };
@@ -159,30 +161,37 @@ export default function Tasks() {
                         <th>Priority</th>
                         <th>Due Date</th>
                         <th>Assignee</th>
+                        <th className="desktop-hide">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {tasks.map(task => (
                         <tr key={task.id}>
-                            <td>
+                            <td data-label="Task Name">
                                 <span style={{ cursor: 'pointer', fontWeight: 600, color: 'var(--text-primary)' }} onClick={() => navigate(`/tasks/${task.id}`)}>
                                     {task.title || 'Untitled'}
                                 </span>
                             </td>
-                            <td>
+                            <td data-label="Status">
                                 {renderGlassDropdown(task, 'status', systemStatuses)}
                             </td>
-                            <td>
+                            <td data-label="Priority">
                                 {renderGlassDropdown(task, 'priority', systemPriorities)}
                             </td>
-                            <td>
-                                <input type="date" style={{ border: 'none', background: 'transparent', outline: 'none' }}
-                                    value={task.due_date ? task.due_date.split('T')[0] : ''}
-                                    onChange={e => handleUpdate(task.id, 'due_date', new Date(e.target.value).toISOString())} />
+                            <td data-label="Due Date">
+                                <GlassDatePicker value={task.due_date} onChange={val => handleUpdate(task.id, 'due_date', val)} placeholder="None" />
                             </td>
-                            <td>
+                            <td data-label="Assignee">
                                 <input type="text" style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%' }}
                                     value={task.assignee} onChange={e => handleUpdate(task.id, 'assignee', e.target.value)} placeholder="Unassigned" />
+                            </td>
+                            <td className="mobile-only-action">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); if (confirm('Delete this task?')) { deleteTask(task.id); refreshTasks(); } }}
+                                    style={{ background: 'transparent', border: 'none', color: '#ff4d4d', cursor: 'pointer', padding: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                    <Trash2 size={16} />
+                                </button>
                             </td>
                         </tr>
                     ))}
@@ -254,9 +263,7 @@ export default function Tasks() {
                                 )}
                             </td>
                             <td style={{ padding: '0.75rem 1rem', borderRight: '1px solid var(--border-color)' }}>
-                                <input type="date" style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '0.875rem', color: 'var(--text-secondary)' }}
-                                    value={task.due_date ? task.due_date.split('T')[0] : ''}
-                                    onChange={e => handleUpdate(task.id, 'due_date', new Date(e.target.value).toISOString())} />
+                                <GlassDatePicker value={task.due_date} onChange={val => handleUpdate(task.id, 'due_date', val)} placeholder="None" />
                             </td>
                             <td style={{ padding: '0.75rem 1rem', borderRight: '1px solid var(--border-color)', position: 'relative', overflow: 'visible' }}>
                                 {renderGlassDropdown(task, 'priority', systemPriorities)}
@@ -368,14 +375,14 @@ export default function Tasks() {
                 </div>
             </div>
 
-            <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
-                <div style={{ flex: isEditing ? '0 0 60%' : 1, overflow: 'auto', paddingRight: isEditing ? '1.5rem' : 0, transition: 'all 0.3s ease' }}>
+            <div className={`tasks-layout-container ${isEditing ? 'is-editing' : ''}`} style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
+                <div className="tasks-main-content" style={{ flex: isEditing ? '0 0 60%' : 1, overflow: 'auto', paddingRight: isEditing ? '1.5rem' : 0, transition: 'all 0.3s ease' }}>
                     {activeTab === 'Table' && renderTableView()}
                     {activeTab === 'Board' && renderBoardView()}
                     {activeTab === 'Checklist' && renderChecklistView()}
                 </div>
                 {isEditing && (
-                    <div style={{ flex: '1', borderLeft: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)', overflowY: 'auto', paddingLeft: '1.5rem', marginLeft: '1.5rem' }}>
+                    <div className="tasks-detail-sidebar" style={{ flex: '1', borderLeft: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)', overflowY: 'auto', paddingLeft: '1.5rem', marginLeft: '1.5rem' }}>
                         <Outlet />
                     </div>
                 )}
