@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, AlertCircle, Clock, Calendar, CheckCircle2 } from 'lucide-react';
 import { getTasks } from '../lib/data';
+import { formatTaskDate } from '../lib/utils';
 
 export default function BellNotification({ isCollapsed, alignRight }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -27,7 +28,7 @@ export default function BellNotification({ isCollapsed, alignRight }) {
                         id: `overdue-${task.id}`,
                         type: 'overdue',
                         title: 'Task Overdue!',
-                        message: `"${task.title || 'Untitled'}" was due ${dueDate.toLocaleDateString()}`,
+                        message: `"${task.title || 'Untitled'}" was due ${formatTaskDate(task.due_date)}`,
                         icon: <AlertCircle size={18} color="var(--danger)" />,
                         bgColor: 'var(--card-red-bg)',
                         time: 'Overdue'

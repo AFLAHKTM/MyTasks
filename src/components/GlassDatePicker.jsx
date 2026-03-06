@@ -178,9 +178,9 @@ export default function GlassDatePicker({ value, onChange, placeholder = 'Select
 
     const getDisplayValue = () => {
         if (!startDate) return '';
-        let str = format(startDate, includeTime ? 'MMM d, yyyy HH:mm' : 'MMM d, yyyy');
+        let str = format(startDate, includeTime ? 'MMMM d, yyyy h:mm a' : 'MMMM d, yyyy');
         if (hasEndDate && endDate) {
-            str += ' - ' + format(endDate, includeTime ? 'MMM d, yyyy HH:mm' : 'MMM d, yyyy');
+            str += ' - ' + format(endDate, includeTime ? 'MMMM d, yyyy h:mm a' : 'MMMM d, yyyy');
         }
         return str;
     };

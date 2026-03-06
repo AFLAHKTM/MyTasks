@@ -3,6 +3,7 @@ import { getTasks, updateTask, deleteTask, createTask, getStatuses, saveStatuses
 import { NavLink, useNavigate, Outlet, useMatch } from 'react-router-dom';
 import { Columns, LayoutList, Plus, MoreHorizontal, FileText, Type, Users, Calendar, AlertCircle, Maximize2, ListChecks, Edit3, ArrowUpDown, Trash2 } from 'lucide-react';
 import GlassDatePicker from '../components/GlassDatePicker';
+import { formatTaskDate } from '../lib/utils';
 
 
 export default function Tasks() {
@@ -331,7 +332,7 @@ export default function Tasks() {
                                             {renderPill('status', task.status || 'No Status')}
                                             {task.priority && renderPill('priority', task.priority)}
                                         </div>
-                                        {task.due_date && <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{new Date(task.due_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>}
+                                        {task.due_date && <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{formatTaskDate(task.due_date)}</div>}
                                         {task.assignee && (
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                                                 <div style={{ width: '18px', height: '18px', borderRadius: '50%', backgroundColor: 'var(--accent-primary)', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '10px', fontWeight: 'bold', flexShrink: 0 }}>{task.assignee.charAt(0).toUpperCase()}</div>

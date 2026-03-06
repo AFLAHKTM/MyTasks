@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { getTasks } from '../lib/data';
 import { NavLink } from 'react-router-dom';
+import { formatTaskDate } from '../lib/utils';
 
 export default function Team() {
     const [tasks, setTasks] = useState([]);
 
     useEffect(() => {
         const handleDataSync = () => {
-    setTasks(getTasks());
+            setTasks(getTasks());
         };
         handleDataSync();
         window.addEventListener('appDataChanged', handleDataSync);
@@ -38,7 +39,7 @@ export default function Team() {
                                 <div style={{ width: '40px', height: '40px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: 'var(--text-secondary)' }}>
                                     {assignee.charAt(0).toUpperCase()}
                                 </div>
-                                <div>
+                                <div style={{ minWidth: 0 }}>
                                     <h2 style={{ fontSize: '1.125rem', fontWeight: 600 }}>{assignee}</h2>
                                     <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{userTasks.length} Assigned Tasks</p>
                                 </div>
@@ -50,7 +51,7 @@ export default function Team() {
                                         <div style={{ fontWeight: 500, color: 'var(--text-primary)', fontSize: '0.875rem', marginBottom: '0.25rem' }}>{task.title || 'Untitled'}</div>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
                                             <span style={{ color: task.status === 'Done' ? 'var(--success)' : 'var(--text-secondary)' }}>{task.status || 'No Status'}</span>
-                                            <span style={{ color: 'var(--text-tertiary)' }}>{task.due_date ? new Date(task.due_date).toLocaleDateString() : ''}</span>
+                                            <span style={{ color: 'var(--text-tertiary)' }}>{formatTaskDate(task.due_date)}</span>
                                         </div>
                                     </NavLink>
                                 ))}

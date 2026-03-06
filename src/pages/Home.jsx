@@ -3,6 +3,7 @@ import { getTasks } from '../lib/data';
 import { NavLink } from 'react-router-dom';
 import { Activity, Plus, Calendar as CalendarIcon, ArrowRight, CheckCircle } from 'lucide-react';
 import { isSameDay, format, isPast } from 'date-fns';
+import { formatTaskDate } from '../lib/utils';
 
 export default function Home() {
     const [tasks, setTasks] = useState([]);
@@ -66,7 +67,7 @@ export default function Home() {
                                             {isPast(new Date(task.due_date)) && !isSameDay(new Date(task.due_date), new Date()) && (
                                                 <span style={{ color: 'var(--danger)', fontWeight: 700, backgroundColor: 'var(--badge-red-bg)', padding: '2px 6px', borderRadius: '4px' }}>OVERDUE</span>
                                             )}
-                                            {task.due_date && <span>📅 {format(new Date(task.due_date), 'MMM d')}</span>}
+                                            {task.due_date && <span>📅 {formatTaskDate(task.due_date)}</span>}
                                             {task.assignee && <span>👤 {task.assignee}</span>}
                                             {task.priority === 'High' && <span style={{ color: 'var(--danger)', fontWeight: 500 }}>High Priority</span>}
                                         </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getTasks, updateTask, getStatuses } from '../lib/data';
 import { useNavigate } from 'react-router-dom';
+import { formatTaskDate } from '../lib/utils';
 
 export default function Completed() {
     const [tasks, setTasks] = useState([]);
@@ -10,7 +11,7 @@ export default function Completed() {
 
     useEffect(() => {
         const handleDataSync = () => {
-    setTasks(getTasks().filter(t => t.status === 'Done'));
+            setTasks(getTasks().filter(t => t.status === 'Done'));
             setSystemStatuses(getStatuses());
         };
         handleDataSync();
@@ -78,7 +79,7 @@ export default function Completed() {
                                 </td>
                                 <td>
                                     <span style={{ color: 'var(--text-secondary)' }}>
-                                        {task.due_date ? new Date(task.due_date).toLocaleDateString() : ''}
+                                        {formatTaskDate(task.due_date)}
                                     </span>
                                 </td>
                                 <td>
