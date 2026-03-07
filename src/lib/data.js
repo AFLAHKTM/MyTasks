@@ -147,12 +147,14 @@ export const initDB = async () => {
   if (!existingPriorities) localStorage.setItem(DB_PRIORITIES_KEY, JSON.stringify(DEFAULT_PRIORITIES));
   if (!existingConfig) localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(DEFAULT_CONFIG));
 
-  // 2. Migration & Reconciliation
+  // 2. Start listening for changes IMMEDIATELY
+  subscribeToChanges();
+
+  // 3. Reconciliation: Push local data to Supabase to ensure cloud matches current device
   try {
     const tasks = getTasks();
     if (tasks.length > 0) {
-      console.log('Ensuring local tasks are synced to Supabase...');
-      // Use upsert to push all local tasks, preserving them in the cloud
+      console.log('Synchronizing local content to cloud...');
       await supabase.from('tasks').upsert(tasks.map(t => ({
         id: t.id,
         title: t.title,
@@ -168,6 +170,7 @@ export const initDB = async () => {
     const statuses = getStatuses();
     const priorities = getPriorities();
     
+    // Always ensure basic infrastructure tables have defaults if they appear empty
     const { data: sRows } = await supabase.from('statuses').select('id').limit(1);
     if (!sRows || sRows.length === 0) {
       if (statuses.length > 0) await supabase.from('statuses').insert(statuses.map(s => ({ name: s.name, color: s.color, is_default: !!s.isDefault })));
@@ -178,20 +181,22 @@ export const initDB = async () => {
       if (priorities.length > 0) await supabase.from('priorities').insert(priorities.map(p => ({ name: p.name, color: p.color, is_default: !!p.isDefault })));
     }
   } catch (err) {
-    console.error('Initial sync error:', err);
+    console.warn('Silent reconciliation check failed (likely offline):', err);
   }
 
-  // 3. Initial fetch from Supabase
+  // 4. Initial pull from cloud to catch updates from other devices
   await syncFromSupabase();
 
-  // 4. Start listening for changes
-  subscribeToChanges();
-  
-  // 5. Wake-up sync listeners
-  window.addEventListener('focus', () => syncFromSupabase());
-  window.addEventListener('online', () => syncFromSupabase());
+  // 5. Setup Wake-up sync listeners (crucial for mobile sleep/wake)
+  const syncFunc = () => {
+    console.log('Device woke up/focused. Refreshing data...');
+    syncFromSupabase();
+  };
+
+  window.addEventListener('focus', syncFunc);
+  window.addEventListener('online', syncFunc);
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') syncFromSupabase();
+    if (document.visibilityState === 'visible') syncFunc();
   });
 };
 
