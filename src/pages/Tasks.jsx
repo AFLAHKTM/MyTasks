@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { getTasks, updateTask, deleteTask, createTask, getStatuses, saveStatuses, getPriorities } from '../lib/data';
 import { NavLink, useNavigate, Outlet, useMatch } from 'react-router-dom';
 import { Columns, LayoutList, Plus, MoreHorizontal, FileText, Type, Users, Calendar, AlertCircle, Maximize2, ListChecks, Edit3, ArrowUpDown, Trash2 } from 'lucide-react';
@@ -36,6 +36,38 @@ export default function Tasks() {
     }, []);
 
     const refreshTasks = () => setTasks(getTasks());
+    
+    const sortedTasks = useMemo(() => {
+        const pOrder = {};
+        systemPriorities.forEach((p, i) => {
+            pOrder[p.name] = i;
+        });
+
+        return [...tasks].sort((a, b) => {
+            // 1. Sort by Due Date (Ascending: Soonest first)
+            const getTaskTime = (dueDate) => {
+                if (!dueDate) return Infinity;
+                const baseDateString = dueDate.split(' - ')[0];
+                const d = new Date(baseDateString);
+                return isNaN(d.getTime()) ? Infinity : d.getTime();
+            };
+
+            const timeA = getTaskTime(a.due_date);
+            const timeB = getTaskTime(b.due_date);
+
+            if (timeA !== timeB) return timeA - timeB;
+
+            // 2. Sort by Priority (Descending: High first)
+            const valA = pOrder[a.priority] || 0;
+            const valB = pOrder[b.priority] || 0;
+            if (valA !== valB) return valB - valA;
+
+            // 3. Fallback: Created at (Newest first)
+            const createdA = a.created_at ? new Date(a.created_at).getTime() : 0;
+            const createdB = b.created_at ? new Date(b.created_at).getTime() : 0;
+            return createdB - createdA;
+        });
+    }, [tasks, systemPriorities]);
 
     const handleUpdate = (id, field, value) => {
         updateTask(id, { [field]: value });
@@ -166,7 +198,7 @@ export default function Tasks() {
                     </tr>
                 </thead>
                 <tbody>
-                    {tasks.map(task => (
+                    {sortedTasks.map(task => (
                         <tr key={task.id}>
                             <td data-label="Task Name">
                                 <span style={{ cursor: 'pointer', fontWeight: 600, color: 'var(--text-primary)' }} onClick={() => navigate(`/tasks/${task.id}`)}>
@@ -237,7 +269,7 @@ export default function Tasks() {
                     </tr>
                 </thead>
                 <tbody>
-                    {tasks.map(task => (
+                    {sortedTasks.map(task => (
                         <tr key={task.id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background-color 0.1s', ':hover': { backgroundColor: 'rgba(255,255,255,0.03)' } }}>
                             <td style={{ padding: '0.75rem 1rem', borderRight: '1px solid var(--border-color)' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -290,7 +322,7 @@ export default function Tasks() {
         return (
             <div className="board">
                 {statuses.map((status, index) => {
-                    const columnTasks = tasks.filter(t => status ? t.status === status : !t.status);
+                    const columnTasks = sortedTasks.filter(t => status ? t.status === status : !t.status);
                     const displayStatus = status || 'No Status';
                     const isDraggingThisCol = draggingColumnIndex !== null && draggingColumnIndex === index;
                     const statusObj = systemStatuses.find(s => s.name === status);
