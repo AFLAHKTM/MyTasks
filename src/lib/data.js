@@ -137,23 +137,46 @@ export const initDB = async () => {
   if (!existingPriorities) localStorage.setItem(DB_PRIORITIES_KEY, JSON.stringify(DEFAULT_PRIORITIES));
   if (!existingConfig) localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(DEFAULT_CONFIG));
 
+  // 2. Migration: If Supabase is empty but we have local data, push to Supabase
+  try {
+    const { data: dbTasks, error } = await supabase.from('tasks').select('id').limit(1);
+    if (!error && (!dbTasks || dbTasks.length === 0)) {
+      console.log('Supabase is empty. Migrating local data to Supabase...');
+      const tasks = getTasks();
+      const statuses = getStatuses();
+      const priorities = getPriorities();
+
+      // Only migrate if we have something to migrate
+      if (tasks.length > 0) {
+        await supabase.from('tasks').insert(tasks.map(t => ({
+          id: t.id,
+          title: t.title,
+          assignee: t.assignee,
+          due_date: t.due_date,
+          priority: t.priority,
+          status: t.status,
+          content: t.content,
+          created_at: t.created_at || new Date().toISOString()
+        })));
+      }
+
+      // Sync statuses/priorities if they are also empty
+      const { data: sRows } = await supabase.from('statuses').select('id').limit(1);
+      if (!sRows || sRows.length === 0) {
+        if (statuses.length > 0) await supabase.from('statuses').insert(statuses.map(s => ({ name: s.name, color: s.color, is_default: !!s.isDefault })));
+      }
+      
+      const { data: pRows } = await supabase.from('priorities').select('id').limit(1);
+      if (!pRows || pRows.length === 0) {
+        if (priorities.length > 0) await supabase.from('priorities').insert(priorities.map(p => ({ name: p.name, color: p.color, is_default: !!p.isDefault })));
+      }
+    }
+  } catch (err) {
+    console.error('Migration error:', err);
+  }
+
   // 2. Initial fetch from Supabase
   await syncFromSupabase();
-
-  // 3. Migration: If Supabase is empty but we have local data, push to Supabase
-  const { data: dbTasks } = await supabase.from('tasks').select('id').limit(1);
-  if (!dbTasks || dbTasks.length === 0) {
-    console.log('Supabase is empty. Migrating local data...');
-    const tasks = getTasks();
-    const statuses = getStatuses();
-    const priorities = getPriorities();
-
-    if (tasks.length > 0) await supabase.from('tasks').insert(tasks.map(t => ({ ...t })));
-    if (statuses.length > 0) await supabase.from('statuses').insert(statuses.map(s => ({ name: s.name, color: s.color, is_default: s.isDefault })));
-    if (priorities.length > 0) await supabase.from('priorities').insert(priorities.map(p => ({ name: p.name, color: p.color, is_default: p.isDefault })));
-
-    await syncFromSupabase(); // Get them back with DB IDs if any (though we use UUIDs)
-  }
 
   // 4. Start listening for changes
   subscribeToChanges();
@@ -169,7 +192,9 @@ export const saveWorkspaceConfig = (config) => {
   dispatchDataUpdate();
 
   // Update Supabase
-  supabase.from('workspace_config').update(config).eq('id', 'default').then(() => { });
+  supabase.from('workspace_config').update(config).eq('id', 'default').then(({ error }) => {
+    if (error) console.error('Supabase Config Update Error:', error);
+  });
 };
 
 export const getStatuses = () => {
@@ -220,8 +245,10 @@ export const createTask = (taskData) => {
   localStorage.setItem(DB_KEY, JSON.stringify(tasks));
   dispatchDataUpdate();
 
-  // Save to Supabase
-  supabase.from('tasks').insert([newTask]).then(() => { });
+  // Save to Supabase (background)
+  supabase.from('tasks').insert([newTask]).then(({ error }) => {
+    if (error) console.error('Supabase Task Insert Error:', error);
+  });
 
   return newTask;
 };
@@ -234,8 +261,10 @@ export const updateTask = (id, updates) => {
     localStorage.setItem(DB_KEY, JSON.stringify(tasks));
     dispatchDataUpdate();
 
-    // Save to Supabase
-    supabase.from('tasks').update(updates).eq('id', id).then(() => { });
+    // Save to Supabase (background)
+    supabase.from('tasks').update(updates).eq('id', id).then(({ error }) => {
+      if (error) console.error('Supabase Task Update Error:', error);
+    });
 
     return tasks[idx];
   }
@@ -248,6 +277,8 @@ export const deleteTask = (id) => {
   localStorage.setItem(DB_KEY, JSON.stringify(tasks));
   dispatchDataUpdate();
 
-  // Delete from Supabase
-  supabase.from('tasks').delete().eq('id', id).then(() => { });
+  // Delete from Supabase (background)
+  supabase.from('tasks').delete().eq('id', id).then(({ error }) => {
+    if (error) console.error('Supabase Task Delete Error:', error);
+  });
 };

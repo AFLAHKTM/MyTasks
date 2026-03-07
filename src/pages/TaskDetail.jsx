@@ -12,11 +12,21 @@ export default function TaskDetail() {
     const [task, setTask] = useState(null);
     const [systemStatuses, setSystemStatuses] = useState([]);
     const [systemPriorities, setSystemPriorities] = useState([]);
+    
+    // Local state for debouncing
+    const [localTitle, setLocalTitle] = useState('');
+    const [localAssignee, setLocalAssignee] = useState('');
+    const [localContent, setLocalContent] = useState('');
 
     useEffect(() => {
         const handleDataSync = () => {
             const t = getTask(id);
-            if (t) setTask(t);
+            if (t) {
+                setTask(t);
+                setLocalTitle(t.title || '');
+                setLocalAssignee(t.assignee || '');
+                setLocalContent(t.content || '');
+            }
             else navigate('/tasks');
             setSystemStatuses(getStatuses());
             setSystemPriorities(getPriorities());
@@ -29,6 +39,31 @@ export default function TaskDetail() {
             window.removeEventListener('storage', handleDataSync);
         };
     }, [id, navigate]);
+
+    // Handle debounced updates for text fields
+    useEffect(() => {
+        if (!task) return;
+        const timer = setTimeout(() => {
+            if (localTitle !== task.title) updateTask(id, { title: localTitle });
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [localTitle, id]);
+
+    useEffect(() => {
+        if (!task) return;
+        const timer = setTimeout(() => {
+            if (localAssignee !== task.assignee) updateTask(id, { assignee: localAssignee });
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [localAssignee, id]);
+
+    useEffect(() => {
+        if (!task) return;
+        const timer = setTimeout(() => {
+            if (localContent !== task.content) updateTask(id, { content: localContent });
+        }, 800);
+        return () => clearTimeout(timer);
+    }, [localContent, id]);
 
     if (!task) return <div style={{ padding: '2rem' }}>Loading...</div>;
 
@@ -53,8 +88,8 @@ export default function TaskDetail() {
             <div style={{ display: 'flex', gap: '1.5rem', flexDirection: 'column' }}>
                 <input
                     type="text"
-                    value={task.title}
-                    onChange={e => handleUpdate('title', e.target.value)}
+                    value={localTitle}
+                    onChange={e => setLocalTitle(e.target.value)}
                     className="task-detail-title"
                     style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--text-primary)', border: 'none', background: 'transparent', width: '100%', outline: 'none' }}
                     placeholder="Untitled Task"
@@ -74,7 +109,7 @@ export default function TaskDetail() {
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', alignItems: 'center' }}>
                         <span style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>Assignee</span>
-                        <input type="text" value={task.assignee} onChange={e => handleUpdate('assignee', e.target.value)} style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '0.875rem' }} placeholder="Empty" />
+                        <input type="text" value={localAssignee} onChange={e => setLocalAssignee(e.target.value)} style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '0.875rem' }} placeholder="Empty" />
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', alignItems: 'center' }}>
                         <span style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>Due Date</span>
@@ -96,8 +131,8 @@ export default function TaskDetail() {
                 <div style={{ marginTop: '1rem' }}>
                     <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Description</h3>
                     <textarea
-                        value={task.content}
-                        onChange={e => handleUpdate('content', e.target.value)}
+                        value={localContent}
+                        onChange={e => setLocalContent(e.target.value)}
                         className="input"
                         style={{ minHeight: '300px', resize: 'vertical', fontFamily: 'monospace', padding: '1rem', fontSize: '0.875rem', backgroundColor: 'var(--bg-secondary)', border: 'none' }}
                         placeholder="Start typing..."
