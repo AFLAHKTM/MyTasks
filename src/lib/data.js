@@ -90,20 +90,51 @@ const syncFromSupabase = async () => {
       supabase.from('workspace_config').select('*').eq('id', 'default').single()
     ]);
 
-    // Handle incoming data without blindly overwriting local-only data
-    if (tasksRes.data) {
-      const remoteTasks = tasksRes.data;
-      const localTasks = getTasks();
-      
-      // If we have local data but remote is empty, this might be a fresh project or a sync error.
-      // Don't just clear local if local has tasks.
-      if (remoteTasks.length === 0 && localTasks.length > 0) {
-        console.log('Remote is empty, not overwriting non-empty local storage');
-      } else {
-        localStorage.setItem(DB_KEY, JSON.stringify(remoteTasks));
-      }
+    if (tasksRes.error || statusesRes.error || prioritiesRes.error) {
+      console.warn('Supabase fetch returned error (offline?):', { tasks: tasksRes.error, statuses: statusesRes.error });
+      return; 
     }
+
+    const remoteTasks = tasksRes.data || [];
+    const localTasks = getTasks();
     
+    // 1. Handle Synchronization logic
+    if (remoteTasks.length > 0) {
+      // Cloud is Truth. Update local. 
+      // Note: We blindly overwrite local here for simplicity. 
+      // If we had updatedAt, we'd do a more complex merge.
+      localStorage.setItem(DB_KEY, JSON.stringify(remoteTasks));
+    } else if (localTasks.length > 0) {
+      // Cloud is empty but we have local data. Push local to Cloud.
+      // This happens when a user starts offline then connects.
+      console.log('Pushing local-only data to cloud...');
+      await supabase.from('tasks').upsert(localTasks.map(t => ({
+        id: t.id,
+        title: t.title,
+        assignee: t.assignee,
+        due_date: t.due_date,
+        priority: t.priority,
+        status: t.status,
+        content: t.content,
+        created_at: t.created_at || new Date().toISOString()
+      })));
+    } else {
+      // BOTH are empty. Seed defaults.
+      console.log('Fresh workspace detected. Seeding defaults...');
+      localStorage.setItem(DB_KEY, JSON.stringify(DEFAULT_TASKS));
+      localStorage.setItem(DB_STATUSES_KEY, JSON.stringify(DEFAULT_STATUSES));
+      localStorage.setItem(DB_PRIORITIES_KEY, JSON.stringify(DEFAULT_PRIORITIES));
+      localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(DEFAULT_CONFIG));
+      
+      await Promise.all([
+        supabase.from('tasks').upsert(DEFAULT_TASKS),
+        supabase.from('statuses').upsert(DEFAULT_STATUSES.map(s => ({ name: s.name, color: s.color, is_default: !!s.isDefault }))),
+        supabase.from('priorities').upsert(DEFAULT_PRIORITIES.map(p => ({ name: p.name, color: p.color, is_default: !!p.isDefault }))),
+        supabase.from('workspace_config').upsert({ id: 'default', ...DEFAULT_CONFIG })
+      ]);
+    }
+
+    // 2. Sync Metadata (Statuses, Priorities, Config)
     if (statusesRes.data && statusesRes.data.length > 0) {
       localStorage.setItem(DB_STATUSES_KEY, JSON.stringify(statusesRes.data.map(s => ({ name: s.name, color: s.color, isDefault: s.is_default }))));
     }
@@ -120,41 +151,48 @@ const syncFromSupabase = async () => {
 
     dispatchDataUpdate();
   } catch (error) {
-    console.error('Error syncing from Supabase:', error);
+    console.error('Critical Error in syncFromSupabase:', error);
   }
 };
 
 // Subscribe to real-time changes
+let channel = null;
 const subscribeToChanges = () => {
-  supabase
+  if (channel) {
+    supabase.removeChannel(channel);
+  }
+
+  channel = supabase
     .channel('db-changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => syncFromSupabase())
     .on('postgres_changes', { event: '*', schema: 'public', table: 'statuses' }, () => syncFromSupabase())
     .on('postgres_changes', { event: '*', schema: 'public', table: 'priorities' }, () => syncFromSupabase())
     .on('postgres_changes', { event: '*', schema: 'public', table: 'workspace_config' }, () => syncFromSupabase())
-    .subscribe();
+    .subscribe((status) => {
+      console.log('Supabase Realtime Status:', status);
+      if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+        setTimeout(subscribeToChanges, 5000); // Attempt re-subscribe
+      }
+    });
 };
 
 export const initDB = async () => {
+  // 1. Initial Local Setup (don't seed defaults yet, wait for cloud pull)
   const existingTasks = localStorage.getItem(DB_KEY);
-  const existingStatuses = localStorage.getItem(DB_STATUSES_KEY);
-  const existingPriorities = localStorage.getItem(DB_PRIORITIES_KEY);
-  const existingConfig = localStorage.getItem(DB_CONFIG_KEY);
+  
+  // 2. Initial pull from cloud to catch updates from other devices
+  // This is the most important step for new devices to NOT overwrite cloud with defaults
+  await syncFromSupabase();
 
-  // 1. Initial Local Setup if empty
-  if (!existingTasks) localStorage.setItem(DB_KEY, JSON.stringify(DEFAULT_TASKS));
-  if (!existingStatuses) localStorage.setItem(DB_STATUSES_KEY, JSON.stringify(DEFAULT_STATUSES));
-  if (!existingPriorities) localStorage.setItem(DB_PRIORITIES_KEY, JSON.stringify(DEFAULT_PRIORITIES));
-  if (!existingConfig) localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(DEFAULT_CONFIG));
-
-  // 2. Start listening for changes IMMEDIATELY
+  // 3. Start listening for changes
   subscribeToChanges();
 
-  // 3. Reconciliation: Push local data to Supabase to ensure cloud matches current device
+  // 4. Reconciliation: Only push if we have local data and we are fairly sure it's newer or unique
+  // For now, if local has data, ensure it's in the cloud
   try {
     const tasks = getTasks();
     if (tasks.length > 0) {
-      console.log('Synchronizing local content to cloud...');
+      console.log('Ensuring local data is backed up to cloud...');
       await supabase.from('tasks').upsert(tasks.map(t => ({
         id: t.id,
         title: t.title,
@@ -166,31 +204,16 @@ export const initDB = async () => {
         created_at: t.created_at || new Date().toISOString()
       })));
     }
-
-    const statuses = getStatuses();
-    const priorities = getPriorities();
-    
-    // Always ensure basic infrastructure tables have defaults if they appear empty
-    const { data: sRows } = await supabase.from('statuses').select('id').limit(1);
-    if (!sRows || sRows.length === 0) {
-      if (statuses.length > 0) await supabase.from('statuses').insert(statuses.map(s => ({ name: s.name, color: s.color, is_default: !!s.isDefault })));
-    }
-    
-    const { data: pRows } = await supabase.from('priorities').select('id').limit(1);
-    if (!pRows || pRows.length === 0) {
-      if (priorities.length > 0) await supabase.from('priorities').insert(priorities.map(p => ({ name: p.name, color: p.color, is_default: !!p.isDefault })));
-    }
   } catch (err) {
-    console.warn('Silent reconciliation check failed (likely offline):', err);
+    console.warn('Background reconciliation failed:', err);
   }
-
-  // 4. Initial pull from cloud to catch updates from other devices
-  await syncFromSupabase();
 
   // 5. Setup Wake-up sync listeners (crucial for mobile sleep/wake)
   const syncFunc = () => {
-    console.log('Device woke up/focused. Refreshing data...');
+    console.log('Checking for updates...');
     syncFromSupabase();
+    // Also re-verify subscription if multi-day sleep
+    if (channel && channel.state === 'closed') subscribeToChanges();
   };
 
   window.addEventListener('focus', syncFunc);
