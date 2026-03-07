@@ -19,9 +19,8 @@ const DEFAULT_CONFIG = {
 };
 
 const DEFAULT_TASKS = [
-  // ... (keep existing)
   {
-    id: uuidv4(),
+    id: '802deb6a-7f61-460b-8535-66d483488730',
     title: 'FM META AD CREATE',
     assignee: 'KTM AFLAH',
     due_date: new Date(new Date().getTime() + 86400000 * 2).toISOString(),
@@ -31,7 +30,7 @@ const DEFAULT_TASKS = [
     created_at: new Date().toISOString()
   },
   {
-    id: uuidv4(),
+    id: 'f4a66e44-d830-47b2-becd-8ed3cad4295e',
     title: 'Pencurve Batch Preparation',
     assignee: '',
     due_date: new Date().toISOString(),
@@ -41,7 +40,7 @@ const DEFAULT_TASKS = [
     created_at: new Date(new Date().getTime() - 86400000 * 5).toISOString()
   },
   {
-    id: uuidv4(),
+    id: 'a9d18e51-4680-496a-9359-2ff773b4d45c',
     title: 'PLAN TOMORROW',
     assignee: '',
     due_date: '',
@@ -51,7 +50,7 @@ const DEFAULT_TASKS = [
     created_at: new Date().toISOString()
   },
   {
-    id: uuidv4(),
+    id: '9d864115-0811-49e0-82f5-2efc0803c734',
     title: 'CALL TO UMMEE',
     assignee: '',
     due_date: new Date(new Date().getTime() + 86400000).toISOString(),
@@ -91,9 +90,20 @@ const syncFromSupabase = async () => {
       supabase.from('workspace_config').select('*').eq('id', 'default').single()
     ]);
 
+    // Handle incoming data without blindly overwriting local-only data
     if (tasksRes.data) {
-      localStorage.setItem(DB_KEY, JSON.stringify(tasksRes.data));
+      const remoteTasks = tasksRes.data;
+      const localTasks = getTasks();
+      
+      // If we have local data but remote is empty, this might be a fresh project or a sync error.
+      // Don't just clear local if local has tasks.
+      if (remoteTasks.length === 0 && localTasks.length > 0) {
+        console.log('Remote is empty, not overwriting non-empty local storage');
+      } else {
+        localStorage.setItem(DB_KEY, JSON.stringify(remoteTasks));
+      }
     }
+    
     if (statusesRes.data && statusesRes.data.length > 0) {
       localStorage.setItem(DB_STATUSES_KEY, JSON.stringify(statusesRes.data.map(s => ({ name: s.name, color: s.color, isDefault: s.is_default }))));
     }
@@ -137,49 +147,52 @@ export const initDB = async () => {
   if (!existingPriorities) localStorage.setItem(DB_PRIORITIES_KEY, JSON.stringify(DEFAULT_PRIORITIES));
   if (!existingConfig) localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(DEFAULT_CONFIG));
 
-  // 2. Migration: If Supabase is empty but we have local data, push to Supabase
+  // 2. Migration & Reconciliation
   try {
-    const { data: dbTasks, error } = await supabase.from('tasks').select('id').limit(1);
-    if (!error && (!dbTasks || dbTasks.length === 0)) {
-      console.log('Supabase is empty. Migrating local data to Supabase...');
-      const tasks = getTasks();
-      const statuses = getStatuses();
-      const priorities = getPriorities();
+    const tasks = getTasks();
+    if (tasks.length > 0) {
+      console.log('Ensuring local tasks are synced to Supabase...');
+      // Use upsert to push all local tasks, preserving them in the cloud
+      await supabase.from('tasks').upsert(tasks.map(t => ({
+        id: t.id,
+        title: t.title,
+        assignee: t.assignee,
+        due_date: t.due_date,
+        priority: t.priority,
+        status: t.status,
+        content: t.content,
+        created_at: t.created_at || new Date().toISOString()
+      })));
+    }
 
-      // Only migrate if we have something to migrate
-      if (tasks.length > 0) {
-        await supabase.from('tasks').insert(tasks.map(t => ({
-          id: t.id,
-          title: t.title,
-          assignee: t.assignee,
-          due_date: t.due_date,
-          priority: t.priority,
-          status: t.status,
-          content: t.content,
-          created_at: t.created_at || new Date().toISOString()
-        })));
-      }
-
-      // Sync statuses/priorities if they are also empty
-      const { data: sRows } = await supabase.from('statuses').select('id').limit(1);
-      if (!sRows || sRows.length === 0) {
-        if (statuses.length > 0) await supabase.from('statuses').insert(statuses.map(s => ({ name: s.name, color: s.color, is_default: !!s.isDefault })));
-      }
-      
-      const { data: pRows } = await supabase.from('priorities').select('id').limit(1);
-      if (!pRows || pRows.length === 0) {
-        if (priorities.length > 0) await supabase.from('priorities').insert(priorities.map(p => ({ name: p.name, color: p.color, is_default: !!p.isDefault })));
-      }
+    const statuses = getStatuses();
+    const priorities = getPriorities();
+    
+    const { data: sRows } = await supabase.from('statuses').select('id').limit(1);
+    if (!sRows || sRows.length === 0) {
+      if (statuses.length > 0) await supabase.from('statuses').insert(statuses.map(s => ({ name: s.name, color: s.color, is_default: !!s.isDefault })));
+    }
+    
+    const { data: pRows } = await supabase.from('priorities').select('id').limit(1);
+    if (!pRows || pRows.length === 0) {
+      if (priorities.length > 0) await supabase.from('priorities').insert(priorities.map(p => ({ name: p.name, color: p.color, is_default: !!p.isDefault })));
     }
   } catch (err) {
-    console.error('Migration error:', err);
+    console.error('Initial sync error:', err);
   }
 
-  // 2. Initial fetch from Supabase
+  // 3. Initial fetch from Supabase
   await syncFromSupabase();
 
   // 4. Start listening for changes
   subscribeToChanges();
+  
+  // 5. Wake-up sync listeners
+  window.addEventListener('focus', () => syncFromSupabase());
+  window.addEventListener('online', () => syncFromSupabase());
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') syncFromSupabase();
+  });
 };
 
 export const getWorkspaceConfig = () => {
@@ -261,8 +274,8 @@ export const updateTask = (id, updates) => {
     localStorage.setItem(DB_KEY, JSON.stringify(tasks));
     dispatchDataUpdate();
 
-    // Save to Supabase (background)
-    supabase.from('tasks').update(updates).eq('id', id).then(({ error }) => {
+    // Use upsert to ensure the task exists in Supabase even if migration failed
+    supabase.from('tasks').upsert(tasks[idx]).then(({ error }) => {
       if (error) console.error('Supabase Task Update Error:', error);
     });
 
