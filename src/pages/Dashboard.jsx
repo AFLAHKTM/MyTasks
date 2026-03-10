@@ -9,7 +9,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         const handleDataSync = () => {
-    setTasks(getTasks());
+            setTasks(getTasks());
         };
         handleDataSync();
         window.addEventListener('appDataChanged', handleDataSync);
@@ -25,8 +25,10 @@ export default function Dashboard() {
     const inProgress = tasks.filter(t => t.status === 'In progress').length;
     const notStarted = tasks.filter(t => t.status === 'Not started' || !t.status).length;
 
-    const overdue = tasks.filter(t => t.due_date && isPast(new Date(t.due_date)) && t.status !== 'Done');
-    const dueToday = tasks.filter(t => t.due_date && isSameDay(new Date(t.due_date), new Date()) && t.status !== 'Done');
+    const overdue = tasks.filter(t => t.due_date && isPast(new Date(t.due_date.split(' - ')[0])) && t.status !== 'Done')
+        .sort((a, b) => new Date(a.due_date.split(' - ')[0]) - new Date(b.due_date.split(' - ')[0]));
+    const dueToday = tasks.filter(t => t.due_date && isSameDay(new Date(t.due_date.split(' - ')[0]), new Date()) && t.status !== 'Done')
+        .sort((a, b) => new Date(a.due_date.split(' - ')[0]) - new Date(b.due_date.split(' - ')[0]));
 
     const StatCard = ({ title, value, icon, color }) => (
         <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.25rem' }}>
