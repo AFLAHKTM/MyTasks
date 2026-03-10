@@ -85,9 +85,22 @@ export default function Dashboard() {
                             <h3 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--danger)', fontWeight: 600, marginBottom: '0.5rem' }}>Overdue</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                 {overdue.slice(0, 3).map(task => (
-                                    <NavLink key={task.id} to={`/tasks/${task.id}`} style={{ textDecoration: 'none', display: 'flex', justifyContent: 'space-between', padding: '0.75rem', border: '1px solid var(--badge-red-border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--badge-red-bg)', color: 'var(--text-primary)' }}>
-                                        <span style={{ fontWeight: 500 }}>{task.title || 'Untitled'}</span>
-                                        <ArrowRight size={16} color="var(--text-tertiary)" />
+                                    <NavLink key={task.id} to={`/tasks/${task.id}`} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '1rem', border: '1px solid var(--badge-red-border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--badge-red-bg)', color: 'var(--text-primary)', transition: 'transform 0.2s', ':hover': { transform: 'translateX(4px)' } }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                            <span style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{task.title || 'Untitled'}</span>
+                                            <ArrowRight size={16} color="var(--text-tertiary)" />
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                            <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px', backgroundColor: 'rgba(0,0,0,0.2)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--text-tertiary)' }}></div>
+                                                {task.status || 'No Status'}
+                                            </span>
+                                            {task.priority && (
+                                                <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px', backgroundColor: task.priority === 'High' ? 'var(--badge-red-bg)' : task.priority === 'Medium' ? 'var(--badge-yellow-bg)' : 'var(--badge-green-bg)', color: task.priority === 'High' ? 'var(--badge-red-text)' : task.priority === 'Medium' ? 'var(--badge-yellow-text)' : 'var(--badge-green-text)', fontWeight: 600, border: `1px solid ${task.priority === 'High' ? 'var(--badge-red-border)' : task.priority === 'Medium' ? 'var(--badge-yellow-border)' : 'var(--badge-green-border)'}` }}>
+                                                    {task.priority}
+                                                </span>
+                                            )}
+                                        </div>
                                     </NavLink>
                                 ))}
                             </div>
@@ -98,9 +111,22 @@ export default function Dashboard() {
                         <h3 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '0.5rem' }}>Due Today</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                             {dueToday.length === 0 ? <p style={{ fontSize: '0.875rem' }}>No tasks due today.</p> : dueToday.slice(0, 3).map(task => (
-                                <NavLink key={task.id} to={`/tasks/${task.id}`} style={{ textDecoration: 'none', display: 'flex', justifyContent: 'space-between', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
-                                    <span style={{ fontWeight: 500 }}>{task.title || 'Untitled'}</span>
-                                    <ArrowRight size={16} color="var(--text-tertiary)" />
+                                <NavLink key={task.id} to={`/tasks/${task.id}`} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', transition: 'transform 0.2s', ':hover': { transform: 'translateX(4px)' } }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                        <span style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{task.title || 'Untitled'}</span>
+                                        <ArrowRight size={16} color="var(--text-tertiary)" />
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                        <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--text-tertiary)' }}></div>
+                                            {task.status || 'No Status'}
+                                        </span>
+                                        {task.priority && (
+                                            <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px', backgroundColor: task.priority === 'High' ? 'var(--badge-red-bg)' : task.priority === 'Medium' ? 'var(--badge-yellow-bg)' : 'var(--badge-green-bg)', color: task.priority === 'High' ? 'var(--badge-red-text)' : task.priority === 'Medium' ? 'var(--badge-yellow-text)' : 'var(--badge-green-text)', fontWeight: 600, border: `1px solid ${task.priority === 'High' ? 'var(--badge-red-border)' : task.priority === 'Medium' ? 'var(--badge-yellow-border)' : 'var(--badge-green-border)'}` }}>
+                                                {task.priority}
+                                            </span>
+                                        )}
+                                    </div>
                                 </NavLink>
                             ))}
                         </div>
