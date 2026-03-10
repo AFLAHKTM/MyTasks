@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, CheckSquare, PlusSquare, Calendar, Users, Settings as SettingsIcon, Archive, Sun, Moon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, PlusSquare, Calendar, Users, Settings as SettingsIcon, Archive, Sun, Moon, ChevronLeft, ChevronRight, StickyNote } from 'lucide-react';
 import BellNotification from './BellNotification';
 import InstallAppBtn from './InstallAppBtn';
 import SyncIndicator from './SyncIndicator';
@@ -35,6 +35,7 @@ export default function Sidebar() {
     const routes = [
         { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={18} /> },
         { name: 'Tasks', path: '/tasks', icon: <CheckSquare size={18} /> },
+        { name: 'Notes', path: '/notes', icon: <StickyNote size={18} /> },
         { name: 'Completed', path: '/completed', icon: <Archive size={18} /> },
         { name: 'Calendar', path: '/calendar', icon: <Calendar size={18} /> },
         { name: 'Team', path: '/team', icon: <Users size={18} /> },

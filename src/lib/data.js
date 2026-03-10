@@ -11,6 +11,7 @@ const DB_STATUSES_KEY = 'antigravity_statuses';
 const DB_PRIORITIES_KEY = 'antigravity_priorities';
 
 const DB_CONFIG_KEY = 'antigravity_workspace_config';
+const DB_NOTES_KEY = 'antigravity_notes_db';
 
 const DEFAULT_CONFIG = {
   enable_ai_assistant: true,
@@ -322,4 +323,15 @@ export const deleteTask = (id) => {
   supabase.from('tasks').delete().eq('id', id).then(({ error }) => {
     if (error) console.error('Supabase Task Delete Error:', error);
   });
+};
+
+export const getNotes = () => {
+  const data = localStorage.getItem(DB_NOTES_KEY);
+  return data ? JSON.parse(data) : '';
+};
+
+export const saveNotes = (content) => {
+  localStorage.setItem(DB_NOTES_KEY, JSON.stringify(content));
+  // In a real app we'd sync this to Supabase too, but for a simple "pad" we'll start with local
+  dispatchDataUpdate();
 };

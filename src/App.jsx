@@ -17,6 +17,7 @@ import Calendar from './pages/Calendar';
 import Team from './pages/Team';
 import Settings from './pages/Settings';
 import Completed from './pages/Completed';
+import Notes from './pages/Notes';
 
 export default function App() {
   const [config, setConfig] = useState(getWorkspaceConfig());
@@ -51,6 +52,7 @@ export default function App() {
             <Route path="/create-task" element={<CreateTask />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/team" element={<Team />} />
+            <Route path="/notes" element={<Notes />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>
         </main>
