@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Sparkles, X, Send, Bot, User } from 'lucide-react';
-import { getTasks } from '../lib/data';
+import { getTasks, getNotes, getStatuses, getTask } from '../lib/data';
 
 export default function AIAssistant() {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([
-        { role: 'ai', content: 'Hello! I am your AI workspace assistant. How can I help you manage your tasks today?' }
+        { role: 'ai', content: 'Hello! I am your AI workspace assistant. I can summarize your tasks and analyze your notes! How can I help?' }
     ]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
@@ -31,30 +31,49 @@ export default function AIAssistant() {
 
         // Simulated AI response delay
         setTimeout(() => {
-            let aiResponse = "I'm currently a demonstration AI, but I'm deeply integrated with your data! Try asking me about 'tasks' or 'overdue'.";
+            let aiResponse = "I'm checking your workspace data... Try asking for a 'summary' or about 'specific tasks'.";
 
             const lowerMsg = userMsg.toLowerCase();
             const tasks = getTasks();
+            const personalNotes = getNotes();
+            const statuses = getStatuses();
 
-            if (lowerMsg.includes('task') || lowerMsg.includes('how many')) {
+            if (lowerMsg.includes('summary') || lowerMsg.includes('update') || lowerMsg.includes('quickly')) {
+                const total = tasks.length;
                 const completed = tasks.filter(t => t.status === 'Done').length;
-                aiResponse = `You currently have ${tasks.length} total tasks in your workspace. ${completed} of them are fully completed!`;
+                const inProgress = tasks.filter(t => t.status === 'In progress').length;
+                const notesTasks = tasks.filter(t => t.status === 'Notes' || (t.notes && t.notes.length > 0));
+                
+                aiResponse = `📊 **Workspace Quick Summary:**\n\n` +
+                             `• **Total tasks:** ${total} (${completed} done, ${inProgress} in progress).\n` +
+                             `• **Active Logs:** You have ${notesTasks.length} tasks with active note logs.\n` +
+                             `• **Personal Note:** Your workspace notepad has ${personalNotes.length} characters of content.\n\n` +
+                             `Most recent task activity: "${tasks[0]?.title || 'None'}".`;
+            } else if (lowerMsg.includes('notes') || lowerMsg.includes('log')) {
+                const tasksWithNotes = tasks.filter(t => t.notes && t.notes.length > 0);
+                if (tasksWithNotes.length > 0) {
+                    const noteCount = tasksWithNotes.reduce((acc, t) => acc + (t.notes?.length || 0), 0);
+                    aiResponse = `You have ${noteCount} total log entries across ${tasksWithNotes.length} different tasks. The most active task is "${tasksWithNotes[0].title}".\n\nYour general pad also says: "${personalNotes.substring(0, 50)}${personalNotes.length > 50 ? '...' : ''}"`;
+                } else {
+                    aiResponse = `You don't have any task logs yet. You can add them in the task detail view or by setting a task status to "Notes"! Your personal workspace pad is ${personalNotes.length > 0 ? 'filling up, though.' : 'currently empty.'}`;
+                }
+            } else if (lowerMsg.includes('task') || lowerMsg.includes('how many')) {
+                const completed = tasks.filter(t => t.status === 'Done').length;
+                aiResponse = `You currently have ${tasks.length} total tasks. ${completed} are complete. Would you like me to summarize the remaining ones?`;
             } else if (lowerMsg.includes('overdue')) {
                 const overdue = tasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'Done');
                 if (overdue.length > 0) {
-                    aiResponse = `You have ${overdue.length} overdue task(s). You can find them highlighted in red on your Dashboard. I'd recommend tackling those first!`;
+                    aiResponse = `⚠️ You have ${overdue.length} overdue tasks! High priority attention needed for: "${overdue[0].title}".`;
                 } else {
-                    aiResponse = "Fantastic news! You have zero overdue tasks right now. You are completely caught up.";
+                    aiResponse = "✅ Excellent! No overdue tasks found in your current workspace.";
                 }
-            } else if (lowerMsg.includes('create') || lowerMsg.includes('add') || lowerMsg.includes('new')) {
-                aiResponse = "To create a brand new task, click the brightly colored 'Create Task' buttons on your Dashboard, or use the '+ New page' shortcut directly in your Kanban columns.";
             } else if (lowerMsg.includes('hello') || lowerMsg.includes('hi')) {
-                aiResponse = "Hello there! Ready to crush some goals today? What's on our agenda?";
+                aiResponse = "Hi! I'm smarter now with access to all your notes and task logs. Ask me for a 'summary' for a quick workspace update!";
             }
 
             setMessages(prev => [...prev, { role: 'ai', content: aiResponse }]);
             setIsTyping(false);
-        }, 1500);
+        }, 1200);
     };
 
     return (
