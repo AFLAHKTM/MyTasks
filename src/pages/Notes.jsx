@@ -166,7 +166,7 @@ export default function Notes() {
             </div>
             
             <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-tertiary)', fontSize: '0.75rem' }}>
-                <p>Personal notes are stored locally in your browser.</p>
+                <p>Personal notes are securely synced to the cloud.</p>
                 <div style={{ display: 'flex', gap: '1.5rem' }}>
                     <p>{content.length} characters | {content.split(/\s+/).filter(Boolean).length} words</p>
                     <p>{taskNotes.length} task-specific notebooks active</p>
