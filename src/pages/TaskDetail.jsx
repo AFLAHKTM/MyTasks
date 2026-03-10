@@ -129,17 +129,71 @@ export default function TaskDetail() {
                 </div>
 
                 <div style={{ marginTop: '1rem' }}>
-                    <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Description</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                        <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>Description</h3>
+                        {task.status === 'Notes' && <span style={{ fontSize: '0.75rem', color: 'var(--accent-primary)', fontWeight: 600 }}>✨ NOTES TYPE ACTIVE</span>}
+                    </div>
                     <textarea
                         value={localContent}
                         onChange={e => setLocalContent(e.target.value)}
                         className="input"
-                        style={{ minHeight: '300px', resize: 'vertical', fontFamily: 'monospace', padding: '1rem', fontSize: '0.875rem', backgroundColor: 'var(--bg-secondary)', border: 'none' }}
-                        placeholder="Start typing..."
+                        style={{ minHeight: '150px', resize: 'vertical', fontFamily: 'monospace', padding: '1rem', fontSize: '0.875rem', backgroundColor: 'var(--bg-secondary)', border: 'none', marginBottom: '1.5rem' }}
+                        placeholder="Start typing general description..."
                     />
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
+                <div style={{ marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                        <FileText size={18} color="var(--accent-primary)" />
+                        <h3 style={{ fontSize: '1rem', color: 'var(--text-primary)', fontWeight: 600 }}>Notes Log</h3>
+                    </div>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {(task.notes || []).map((note, idx) => (
+                            <div key={idx} style={{ padding: '1rem', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                                    <span>{new Date(note.timestamp).toLocaleString()}</span>
+                                    <button 
+                                        onClick={() => {
+                                            const newNotes = [...task.notes];
+                                            newNotes.splice(idx, 1);
+                                            handleUpdate('notes', newNotes);
+                                        }}
+                                        style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: 0 }}
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                                <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>{note.text}</div>
+                            </div>
+                        ))}
+                        
+                        <div style={{ marginTop: '0.5rem' }}>
+                            <textarea
+                                id="new-note-input"
+                                className="input"
+                                style={{ minHeight: '80px', fontSize: '0.875rem', marginBottom: '0.75rem' }}
+                                placeholder="Add a new quick note..."
+                            />
+                            <button 
+                                className="btn btn-secondary" 
+                                style={{ fontSize: '0.875rem', padding: '0.4rem 1rem' }}
+                                onClick={() => {
+                                    const input = document.getElementById('new-note-input');
+                                    if (input && input.value.trim()) {
+                                        const newNotes = [...(task.notes || []), { text: input.value, timestamp: new Date().toISOString() }];
+                                        handleUpdate('notes', newNotes);
+                                        input.value = '';
+                                    }
+                                }}
+                            >
+                                + Add Note
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '3rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem' }}>
                     <button className="btn btn-danger" onClick={handleDelete}><Trash2 size={16} /> Delete Task</button>
                     <button className="btn btn-primary" onClick={() => navigate('/tasks')}><Save size={16} /> Save Changes</button>
                 </div>

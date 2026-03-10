@@ -365,10 +365,19 @@ export default function Tasks() {
                                             {task.priority && renderPill('priority', task.priority)}
                                         </div>
                                         {task.due_date && <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{formatTaskDate(task.due_date)}</div>}
-                                        {task.assignee && (
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                                                <div style={{ width: '18px', height: '18px', borderRadius: '50%', backgroundColor: 'var(--accent-primary)', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '10px', fontWeight: 'bold', flexShrink: 0 }}>{task.assignee.charAt(0).toUpperCase()}</div>
-                                                {task.assignee}
+                                        {(task.assignee || (task.notes && task.notes.length > 0)) && (
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
+                                                {task.assignee ? (
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                                        <div style={{ width: '18px', height: '18px', borderRadius: '50%', backgroundColor: 'var(--accent-primary)', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '10px', fontWeight: 'bold', flexShrink: 0 }}>{task.assignee.charAt(0).toUpperCase()}</div>
+                                                        {task.assignee}
+                                                    </div>
+                                                ) : <div></div>}
+                                                {task.notes && task.notes.length > 0 && (
+                                                    <div style={{ color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem' }}>
+                                                        <FileText size={12} /> {task.notes.length}
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </div>

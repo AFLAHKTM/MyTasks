@@ -63,7 +63,7 @@ const DEFAULT_TASKS = [
 ];
 
 const DEFAULT_STATUSES = [
-  { name: '', color: 'badge-gray', isDefault: true },
+  { name: 'Notes', color: 'badge-gray', isDefault: true },
   { name: 'Not started', color: 'badge-gray' },
   { name: 'In progress', color: 'badge-blue' },
   { name: 'Done', color: 'badge-green' }
@@ -279,6 +279,7 @@ export const createTask = (taskData) => {
   const newTask = {
     ...taskData,
     id: uuidv4(),
+    notes: taskData.notes || [],
     created_at: new Date().toISOString()
   };
 
