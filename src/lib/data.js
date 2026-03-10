@@ -84,11 +84,12 @@ export const dispatchDataUpdate = () => {
 
 const syncFromSupabase = async () => {
   try {
-    const [tasksRes, statusesRes, prioritiesRes, configRes] = await Promise.all([
+    const [tasksRes, statusesRes, prioritiesRes, configRes, notesRes] = await Promise.all([
       supabase.from('tasks').select('*'),
       supabase.from('statuses').select('*'),
       supabase.from('priorities').select('*'),
-      supabase.from('workspace_config').select('*').eq('id', 'default').single()
+      supabase.from('workspace_config').select('*').eq('id', 'default').single(),
+      supabase.from('workspace_notes').select('*').eq('id', 'main').single()
     ]);
 
     if (tasksRes.error || statusesRes.error || prioritiesRes.error) {
@@ -117,6 +118,7 @@ const syncFromSupabase = async () => {
         priority: t.priority,
         status: t.status,
         content: t.content,
+        notes: t.notes || [],
         created_at: t.created_at || new Date().toISOString()
       })));
     } else {
@@ -149,6 +151,9 @@ const syncFromSupabase = async () => {
         sync_system_clock: configRes.data.sync_system_clock
       }));
     }
+    if (notesRes.data) {
+      localStorage.setItem(DB_NOTES_KEY, JSON.stringify(notesRes.data.content));
+    }
 
     dispatchDataUpdate();
   } catch (error) {
@@ -169,6 +174,7 @@ const subscribeToChanges = () => {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'statuses' }, () => syncFromSupabase())
     .on('postgres_changes', { event: '*', schema: 'public', table: 'priorities' }, () => syncFromSupabase())
     .on('postgres_changes', { event: '*', schema: 'public', table: 'workspace_config' }, () => syncFromSupabase())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'workspace_notes' }, () => syncFromSupabase())
     .subscribe((status) => {
       console.log('Supabase Realtime Status:', status);
       if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
@@ -202,8 +208,14 @@ export const initDB = async () => {
         priority: t.priority,
         status: t.status,
         content: t.content,
+        notes: t.notes || [],
         created_at: t.created_at || new Date().toISOString()
       })));
+      
+      const localNotes = getNotes();
+      if (localNotes) {
+        await supabase.from('workspace_notes').upsert({ id: 'main', content: localNotes });
+      }
     }
   } catch (err) {
     console.warn('Background reconciliation failed:', err);
@@ -333,6 +345,10 @@ export const getNotes = () => {
 
 export const saveNotes = (content) => {
   localStorage.setItem(DB_NOTES_KEY, JSON.stringify(content));
-  // In a real app we'd sync this to Supabase too, but for a simple "pad" we'll start with local
   dispatchDataUpdate();
+
+  // Push to Supabase
+  supabase.from('workspace_notes').upsert({ id: 'main', content: content }).then(({ error }) => {
+    if (error) console.error('Supabase Notes Update Error:', error);
+  });
 };
