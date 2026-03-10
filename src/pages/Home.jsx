@@ -28,8 +28,15 @@ export default function Home() {
         const d = new Date(t.due_date.split(' - ')[0]);
         return isSameDay(d, new Date()) || d < new Date();
     }).sort((a, b) => new Date(a.due_date.split(' - ')[0]) - new Date(b.due_date.split(' - ')[0]));
-    const total = tasks.length;
-    const completed = tasks.filter(t => t.status === 'Done').length;
+    const todaySummaryTasks = tasks.filter(t => {
+        if (!t.status) return false;
+        if (!t.due_date) return false;
+        const d = new Date(t.due_date.split(' - ')[0]);
+        return isSameDay(d, new Date()) || d < new Date();
+    });
+
+    const total = todaySummaryTasks.length;
+    const completed = todaySummaryTasks.filter(t => t.status === 'Done').length;
     const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
 
     return (
