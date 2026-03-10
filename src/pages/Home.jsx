@@ -23,6 +23,7 @@ export default function Home() {
 
     const todayTasks = tasks.filter(t => {
         if (t.status === 'Done') return false;
+        if (!t.status) return false;
         if (!t.due_date) return false;
         const d = new Date(t.due_date.split(' - ')[0]);
         return isSameDay(d, new Date()) || d < new Date();
