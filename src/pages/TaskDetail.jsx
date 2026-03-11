@@ -17,6 +17,8 @@ export default function TaskDetail() {
     const [localTitle, setLocalTitle] = useState('');
     const [localAssignee, setLocalAssignee] = useState('');
     const [localContent, setLocalContent] = useState('');
+    const [editingIdx, setEditingIdx] = useState(-1);
+    const [editingText, setEditingText] = useState('');
 
     useEffect(() => {
         const handleDataSync = () => {
@@ -39,6 +41,11 @@ export default function TaskDetail() {
             window.removeEventListener('storage', handleDataSync);
         };
     }, [id, navigate]);
+
+    useEffect(() => {
+        setEditingIdx(-1);
+        setEditingText('');
+    }, [id]);
 
     // Handle debounced updates for text fields
     useEffect(() => {
@@ -153,18 +160,64 @@ export default function TaskDetail() {
                             <div key={idx} style={{ padding: '1rem', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
                                     <span>{new Date(note.timestamp).toLocaleString()}</span>
-                                    <button 
-                                        onClick={() => {
-                                            const newNotes = [...task.notes];
-                                            newNotes.splice(idx, 1);
-                                            handleUpdate('notes', newNotes);
-                                        }}
-                                        style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: 0 }}
-                                    >
-                                        Delete
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                        {editingIdx !== idx && (
+                                            <button 
+                                                onClick={() => {
+                                                    setEditingIdx(idx);
+                                                    setEditingText(note.text);
+                                                }}
+                                                style={{ background: 'transparent', border: 'none', color: 'var(--accent-primary)', cursor: 'pointer', padding: 0 }}
+                                            >
+                                                Edit
+                                            </button>
+                                        )}
+                                        <button 
+                                            onClick={() => {
+                                                const newNotes = [...task.notes];
+                                                newNotes.splice(idx, 1);
+                                                handleUpdate('notes', newNotes);
+                                            }}
+                                            style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: 0 }}
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
                                 </div>
-                                <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>{note.text}</div>
+                                {editingIdx === idx ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                        <textarea 
+                                            className="input" 
+                                            value={editingText}
+                                            onChange={(e) => setEditingText(e.target.value)}
+                                            style={{ minHeight: '80px', fontSize: '0.875rem' }}
+                                            autoFocus
+                                        />
+                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                            <button 
+                                                className="btn btn-primary"
+                                                style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }}
+                                                onClick={() => {
+                                                    const newNotes = [...task.notes];
+                                                    newNotes[idx].text = editingText;
+                                                    handleUpdate('notes', newNotes);
+                                                    setEditingIdx(-1);
+                                                }}
+                                            >
+                                                Save
+                                            </button>
+                                            <button 
+                                                className="btn btn-secondary"
+                                                style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }}
+                                                onClick={() => setEditingIdx(-1)}
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>{note.text}</div>
+                                )}
                             </div>
                         ))}
                         
