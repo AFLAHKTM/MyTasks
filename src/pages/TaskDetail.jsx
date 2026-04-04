@@ -133,6 +133,63 @@ export default function TaskDetail() {
                             ))}
                         </select>
                     </div>
+                    <div style={{ padding: '0.5rem 0', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>Recurring Schedule</span>
+                            <button 
+                                onClick={() => {
+                                    const next = (task.recurring_days || []).length === 7 ? [] : [0,1,2,3,4,5,6];
+                                    handleUpdate('recurring_days', next);
+                                    handleUpdate('every_day', next.length === 7);
+                                }}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'var(--accent-primary)',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em'
+                                }}
+                            >
+                                {(task.recurring_days || []).length === 7 ? 'Deselect All' : 'Select All Days'}
+                            </button>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.35rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+                            {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((day, idx) => {
+                                const isSelected = (task.recurring_days || []).includes(idx);
+                                return (
+                                    <button
+                                        key={day}
+                                        onClick={() => {
+                                            const current = task.recurring_days || [];
+                                            const next = isSelected 
+                                                ? current.filter(d => d !== idx)
+                                                : [...current, idx];
+                                            handleUpdate('recurring_days', next);
+                                            handleUpdate('every_day', next.length === 7);
+                                        }}
+                                        style={{
+                                            flex: '1',
+                                            padding: '0.5rem 0',
+                                            borderRadius: '8px',
+                                            fontSize: '0.65rem',
+                                            fontWeight: 800,
+                                            cursor: 'pointer',
+                                            border: '1.5px solid',
+                                            backgroundColor: isSelected ? 'var(--accent-primary)' : 'transparent',
+                                            borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-color)',
+                                            color: isSelected ? 'white' : 'var(--text-tertiary)',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        {day}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
                 </div>
 
                 <div style={{ marginTop: '1rem' }}>

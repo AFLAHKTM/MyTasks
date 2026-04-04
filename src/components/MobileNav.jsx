@@ -1,16 +1,17 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, CheckSquare, Calendar, MoreHorizontal, Plus } from 'lucide-react';
+import { Home, CheckSquare, Calendar, MoreHorizontal, Plus, FileText } from 'lucide-react';
 
 export default function MobileNav() {
     const location = useLocation();
 
     // In Monday.com: Home, My Work, Notifications, More
     const navItems = [
-        { name: 'Home', path: '/', icon: <Home size={22} /> },
-        { name: 'My Work', path: '/tasks', icon: <CheckSquare size={22} /> },
-        { name: 'Calendar', path: '/calendar', icon: <Calendar size={22} /> },
-        { name: 'More', path: '/settings', icon: <MoreHorizontal size={22} /> },
+        { name: 'Home', path: '/', icon: <Home size={20} /> },
+        { name: 'My Work', path: '/tasks', icon: <CheckSquare size={20} /> },
+        { name: 'Notes', path: '/notes', icon: <FileText size={20} /> },
+        { name: 'Calendar', path: '/calendar', icon: <Calendar size={20} /> },
+        { name: 'Settings', path: '/settings', icon: <MoreHorizontal size={20} /> },
     ];
 
     return (

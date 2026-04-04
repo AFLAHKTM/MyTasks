@@ -15,11 +15,13 @@ export default function Tasks() {
     const [draggingCardId, setDraggingCardId] = useState(null);
     const [draggingColumnIndex, setDraggingColumnIndex] = useState(null);
     const [dragOverStatus, setDragOverStatus] = useState(null);
+    const [activeBoardStatus, setActiveBoardStatus] = useState('');
 
     const [systemStatuses, setSystemStatuses] = useState([]);
     const [systemPriorities, setSystemPriorities] = useState([]);
     const [openDropdown, setOpenDropdown] = useState(null);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    const [isCompactView, setIsCompactView] = useState(false);
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -28,16 +30,18 @@ export default function Tasks() {
     }, []);
 
     useEffect(() => {
-        if (isMobile && activeTab === 'Board') {
-            setActiveTab('Checklist');
-        }
+        // Allow Board on mobile now
     }, [isMobile, activeTab]);
 
     useEffect(() => {
         const handleDataSync = () => {
             setTasks(getTasks());
-            setSystemStatuses(getStatuses());
+            const currentStatuses = getStatuses();
+            setSystemStatuses(currentStatuses);
             setSystemPriorities(getPriorities());
+            if (currentStatuses.length > 0 && !activeBoardStatus) {
+                setActiveBoardStatus(currentStatuses[0].name);
+            }
         };
         handleDataSync();
         window.addEventListener('appDataChanged', handleDataSync);
@@ -46,7 +50,7 @@ export default function Tasks() {
             window.removeEventListener('appDataChanged', handleDataSync);
             window.removeEventListener('storage', handleDataSync);
         };
-    }, []);
+    }, [activeBoardStatus]);
 
     const refreshTasks = () => setTasks(getTasks());
     
@@ -199,139 +203,153 @@ export default function Tasks() {
 
     const renderTableView = () => (
         <div className="table-container">
-            <table className="table">
-                <thead>
-                    <tr>
-                        <th>Task Name</th>
-                        <th>Status</th>
-                        <th>Priority</th>
-                        <th>Due Date</th>
-                        <th>Assignee</th>
-                        <th className="desktop-hide">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
+            {isMobile ? (
+                <div className="mobile-property-cards">
                     {sortedTasks.map(task => (
-                        <tr key={task.id}>
-                            <td data-label="Task Name">
-                                <span style={{ cursor: 'pointer', fontWeight: 600, color: 'var(--text-primary)' }} onClick={() => navigate(`/tasks/${task.id}`)}>
-                                    {task.title || 'Untitled'}
-                                </span>
-                            </td>
-                            <td data-label="Status">
-                                {renderGlassDropdown(task, 'status', systemStatuses)}
-                            </td>
-                            <td data-label="Priority">
-                                {renderGlassDropdown(task, 'priority', systemPriorities)}
-                            </td>
-                            <td data-label="Due Date">
-                                <GlassDatePicker value={task.due_date} onChange={val => handleUpdate(task.id, 'due_date', val)} placeholder="None" />
-                            </td>
-                            <td data-label="Assignee">
-                                <input type="text" style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%' }}
-                                    value={task.assignee} onChange={e => handleUpdate(task.id, 'assignee', e.target.value)} placeholder="Unassigned" />
-                            </td>
-                            <td className="mobile-only-action">
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); if (confirm('Delete this task?')) { deleteTask(task.id); refreshTasks(); } }}
-                                    style={{ background: 'transparent', border: 'none', color: '#ff4d4d', cursor: 'pointer', padding: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                >
-                                    <Trash2 size={16} />
-                                </button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    );
+                        <div key={task.id} className="mobile-property-card">
+                            <div className="prop-header" onClick={() => navigate(`/tasks/${task.id}`)}>
+                                {task.title || 'Untitled'}
+                            </div>
+                            
+                            <div className="prop-row">
+                                <span className="prop-label">STATUS</span>
+                                <div className="prop-value">{renderGlassDropdown(task, 'status', systemStatuses)}</div>
+                            </div>
+                            
+                            <div className="prop-row">
+                                <span className="prop-label">PRIORITY</span>
+                                <div className="prop-value">{renderGlassDropdown(task, 'priority', systemPriorities)}</div>
+                            </div>
+                            
+                            <div className="prop-row">
+                                <span className="prop-label">DUE DATE</span>
+                                <div className="prop-value">
+                                    <GlassDatePicker value={task.due_date} onChange={val => handleUpdate(task.id, 'due_date', val)} placeholder="None" />
+                                </div>
+                            </div>
+                            
+                            <div className="prop-row">
+                                <span className="prop-label">ASSIGNEE</span>
+                                <div className="prop-value">
+                                    <input type="text" className="prop-input"
+                                        value={task.assignee} onChange={e => handleUpdate(task.id, 'assignee', e.target.value)} placeholder="Unassigned" />
+                                </div>
+                            </div>
 
-    const renderChecklistView = () => (
-        <div style={{ backgroundColor: 'transparent', height: '100%', overflow: 'visible' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', color: 'var(--text-primary)' }}>
-                <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
-                        <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 400, borderRight: '1px solid var(--border-color)', width: '35%' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-                                <Type size={16} /> Task <AlertCircle size={12} style={{ opacity: 0.5 }} />
+                            <div className="prop-footer">
+                                <button
+                                    className="prop-delete-btn"
+                                    onClick={(e) => { e.stopPropagation(); if (confirm('Delete this task?')) { deleteTask(task.id); refreshTasks(); } }}
+                                >
+                                    <Trash2 size={18} />
+                                </button>
                             </div>
-                        </th>
-                        <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 400, borderRight: '1px solid var(--border-color)', width: '15%' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-                                <div style={{ width: '14px', height: '14px', borderRadius: '50%', border: '2px dotted var(--text-tertiary)' }}></div> Status <AlertCircle size={12} style={{ opacity: 0.5 }} />
-                            </div>
-                        </th>
-                        <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 400, borderRight: '1px solid var(--border-color)', width: '20%' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-                                <Users size={16} /> Assignee <AlertCircle size={12} style={{ opacity: 0.5 }} />
-                            </div>
-                        </th>
-                        <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 400, borderRight: '1px solid var(--border-color)', width: '15%' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-                                <Calendar size={16} /> Due <AlertCircle size={12} style={{ opacity: 0.5 }} />
-                            </div>
-                        </th>
-                        <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 400, borderRight: '1px solid var(--border-color)', width: '10%' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-                                <AlertCircle size={16} /> Priority <AlertCircle size={12} style={{ opacity: 0.5 }} />
-                            </div>
-                        </th>
-                        <th style={{ padding: '0.75rem 1rem', textAlign: 'center', width: '5%' }}>
-                            <Plus size={16} style={{ cursor: 'pointer', opacity: 0.5 }} />
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {sortedTasks.map(task => (
-                        <tr key={task.id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background-color 0.1s', ':hover': { backgroundColor: 'rgba(255,255,255,0.03)' } }}>
-                            <td style={{ padding: '0.75rem 1rem', borderRight: '1px solid var(--border-color)' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={task.status === 'Done'}
-                                        onChange={(e) => handleUpdate(task.id, 'status', e.target.checked ? 'Done' : 'Not started')}
-                                        style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: 'var(--badge-green-text)' }}
-                                    />
-                                    <span style={{ cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem', textDecoration: task.status === 'Done' ? 'line-through' : 'none', opacity: task.status === 'Done' ? 0.5 : 1 }} onClick={() => navigate(`/tasks/${task.id}`)}>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <table className="table">
+                    <thead>
+                        <tr>
+                            <th>Task Name</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Due Date</th>
+                            <th>Assignee</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {sortedTasks.map(task => (
+                            <tr key={task.id}>
+                                <td data-label="Task Name">
+                                    <span style={{ cursor: 'pointer', fontWeight: 600, color: 'var(--text-primary)' }} onClick={() => navigate(`/tasks/${task.id}`)}>
                                         {task.title || 'Untitled'}
                                     </span>
-                                </div>
-                            </td>
-                            <td style={{ padding: '0.75rem 1rem', borderRight: '1px solid var(--border-color)', position: 'relative', overflow: 'visible' }}>
-                                {renderGlassDropdown(task, 'status', systemStatuses)}
-                            </td>
-                            <td style={{ padding: '0.75rem 1rem', borderRight: '1px solid var(--border-color)' }}>
-                                {task.assignee && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', fontWeight: 600 }}>
-                                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: 'var(--accent-primary)', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '10px', fontWeight: 'bold', flexShrink: 0 }}>{task.assignee.charAt(0).toUpperCase()}</div>
-                                        {task.assignee.toUpperCase()}
-                                    </div>
-                                )}
-                            </td>
-                            <td style={{ padding: '0.75rem 1rem', borderRight: '1px solid var(--border-color)' }}>
-                                <GlassDatePicker value={task.due_date} onChange={val => handleUpdate(task.id, 'due_date', val)} placeholder="None" />
-                            </td>
-                            <td style={{ padding: '0.75rem 1rem', borderRight: '1px solid var(--border-color)', position: 'relative', overflow: 'visible' }}>
-                                {renderGlassDropdown(task, 'priority', systemPriorities)}
-                            </td>
-                            <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
-                            </td>
-                        </tr>
-                    ))}
-                    <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-                        <td colSpan="6" style={{ padding: '0.75rem 1rem' }}>
-                            <button onClick={() => handleAddQuickTask()} style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
-                                <Plus size={16} /> New page
-                            </button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                                </td>
+                                <td data-label="Status">
+                                    {renderGlassDropdown(task, 'status', systemStatuses)}
+                                </td>
+                                <td data-label="Priority">
+                                    {renderGlassDropdown(task, 'priority', systemPriorities)}
+                                </td>
+                                <td data-label="Due Date">
+                                    <GlassDatePicker value={task.due_date} onChange={val => handleUpdate(task.id, 'due_date', val)} placeholder="None" />
+                                </td>
+                                <td data-label="Assignee">
+                                    <input type="text" style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%' }}
+                                        value={task.assignee} onChange={e => handleUpdate(task.id, 'assignee', e.target.value)} placeholder="Unassigned" />
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            )}
         </div>
     );
 
+    const renderChecklistView = () => {
+        const completedCount = tasks.filter(t => t.status === 'Done').length;
+        const totalCount = tasks.length;
+        const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+
+        return (
+            <div className="checklist-container">
+                <div className="checklist-summary">
+                    <div className="summary-left">
+                        <span className="summary-percentage">{Math.round(progress)}%</span>
+                        <span className="summary-label">Tasks completed</span>
+                    </div>
+                    <div className="summary-progress-bar">
+                        <div className="progress-fill" style={{ width: `${progress}%` }}></div>
+                    </div>
+                    <div className="summary-right">
+                        <span>{completedCount}/{totalCount}</span>
+                    </div>
+                </div>
+
+                <div className="checklist-items">
+                    {sortedTasks.map(task => (
+                        <div key={task.id} className={`checklist-item ${task.status === 'Done' ? 'done' : ''}`} onClick={() => navigate(`/tasks/${task.id}`)}>
+                            <div className="item-checkbox-wrapper" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                    type="checkbox"
+                                    checked={task.status === 'Done'}
+                                    onChange={(e) => handleUpdate(task.id, 'status', e.target.checked ? 'Done' : 'Not started')}
+                                    className="custom-checkbox"
+                                />
+                            </div>
+                            <div className="item-content">
+                                <span className="item-title">{task.title || 'Untitled'}</span>
+                                <div className="item-meta">
+                                    {renderPill('status', task.status || 'No Status')}
+                                    {task.priority && renderPill('priority', task.priority)}
+                                    {task.due_date && (
+                                        <span className="item-date">
+                                            <Calendar size={12} /> {formatTaskDate(task.due_date)}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="item-assignee">
+                                {task.assignee && (
+                                    <div className="mini-avatar" title={task.assignee}>
+                                        {task.assignee.charAt(0).toUpperCase()}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <button className="checklist-add-btn" onClick={() => handleAddQuickTask()}>
+                    <Plus size={18} /> Add New Task
+                </button>
+            </div>
+        );
+    };
+
     const renderMobileCards = () => (
-        <div className="mobile-task-cards">
+        <div className={`mobile-task-cards ${isCompactView ? 'compact' : ''}`}>
             {sortedTasks.map(task => (
                 <div key={task.id} className="mobile-task-card" onClick={() => navigate(`/tasks/${task.id}`)}>
                     <div className="card-top">
@@ -373,7 +391,49 @@ export default function Tasks() {
     const renderBoardView = () => {
         const statuses = systemStatuses.map(s => s.name);
         return (
-            <div className="board">
+            <div className="board-view-wrapper">
+                {isMobile && (
+                    <div className="mobile-status-selector">
+                        {systemStatuses.map(s => (
+                            <div 
+                                key={s.name} 
+                                className={`mobile-status-pill-item ${activeBoardStatus === s.name ? 'active' : ''} ${dragOverStatus === s.name ? 'drop-target' : ''}`}
+                                onClick={() => {
+                                    setActiveBoardStatus(s.name);
+                                    const el = document.getElementById(`col-${s.name}`);
+                                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                }}
+                                onDragOver={(e) => {
+                                    if (draggingCardId) {
+                                        e.preventDefault();
+                                        setDragOverStatus(s.name);
+                                    }
+                                }}
+                                onDragLeave={() => {
+                                    if (draggingCardId) setDragOverStatus(null);
+                                }}
+                                onDrop={(e) => {
+                                    if (draggingCardId) {
+                                        e.preventDefault();
+                                        handleUpdate(draggingCardId, 'status', s.name);
+                                        setDraggingCardId(null);
+                                        setDragOverStatus(null);
+                                        setActiveBoardStatus(s.name);
+                                        refreshTasks();
+                                    }
+                                }}
+                                style={{ 
+                                    backgroundColor: activeBoardStatus === s.name ? `var(--${s.color}-text)` : 'rgba(255,255,255,0.1)',
+                                    color: activeBoardStatus === s.name ? 'white' : 'var(--text-tertiary)',
+                                    borderColor: activeBoardStatus === s.name ? 'white' : 'transparent'
+                                }}
+                            >
+                                {s.name}
+                            </div>
+                        ))}
+                    </div>
+                )}
+                <div className={`board ${isMobile ? 'mobile-vertical' : ''}`}>
                 {statuses.map((status, index) => {
                     const columnTasks = sortedTasks.filter(t => status ? t.status === status : !t.status);
                     const displayStatus = status || 'No Status';
@@ -383,6 +443,7 @@ export default function Tasks() {
 
                     return (
                         <div key={displayStatus}
+                            id={`col-${displayStatus}`}
                             className={`board-column color-${colColorClass} ${dragOverStatus === status && draggingCardId ? 'drag-over' : ''}`}
                             draggable={true}
                             onDragStart={e => handleColumnDragStart(e, index)}
@@ -406,17 +467,33 @@ export default function Tasks() {
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                                 {columnTasks.map(task => (
                                     <div key={task.id}
-                                        className="task-card"
+                                        className={`task-card ${isMobile ? 'task-card-outline' : ''}`}
                                         draggable
                                         onDragStart={e => onCardDragStart(e, task.id)}
                                         onDragEnd={() => { setDraggingCardId(null); setDragOverStatus(null); }}
                                         onClick={() => navigate(`/tasks/${task.id}`)}
-                                        style={{ opacity: draggingCardId === task.id ? 0.4 : 1, transform: draggingCardId === task.id ? 'scale(0.98)' : 'scale(1)' }}>
-                                        <div style={{ fontWeight: 600, marginBottom: '0.75rem', fontSize: '0.875rem' }}>{task.title || 'Untitled'}</div>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                                            {renderPill('status', task.status || 'No Status')}
-                                            {task.priority && renderPill('priority', task.priority)}
+                                        style={{ 
+                                            opacity: draggingCardId === task.id ? 0.4 : 1, 
+                                            transform: draggingCardId === task.id ? 'scale(0.98)' : 'scale(1)',
+                                            backgroundColor: isMobile ? 'transparent' : 'var(--bg-secondary)',
+                                            border: isMobile ? '1.5px solid var(--border-color)' : '1px solid var(--border-color)',
+                                            borderRadius: isMobile ? 'var(--radius-lg)' : 'var(--radius-md)',
+                                            cursor: 'grab'
+                                        }}>
+                                        <div style={{ fontWeight: 600, marginBottom: '0.75rem', fontSize: '0.875rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            {task.title || 'Untitled'}
+                                            {isMobile && task.priority && (
+                                                <span className={`badge-outline ${systemPriorities.find(p => p.name === task.priority)?.color || 'badge-gray'}`} style={{ fontSize: '0.65rem', padding: '0.2rem 0.6rem', border: '1px solid currentColor', borderRadius: '20px' }}>
+                                                    {task.priority}
+                                                </span>
+                                            )}
                                         </div>
+                                        {!isMobile && (
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                                                {renderPill('status', task.status || 'No Status')}
+                                                {task.priority && renderPill('priority', task.priority)}
+                                            </div>
+                                        )}
                                         {task.due_date && <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{formatTaskDate(task.due_date)}</div>}
                                         {(task.assignee || (task.notes && task.notes.length > 0)) && (
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
@@ -442,6 +519,7 @@ export default function Tasks() {
                         </div>
                     );
                 })}
+                </div>
             </div>
         );
     };
@@ -453,20 +531,30 @@ export default function Tasks() {
                     <h1 className="page-title">Tasks Directory</h1>
                     <p className="page-subtitle">Manage and track your primary tasks.</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => handleAddQuickTask()}>
-                    <Plus size={18} /> New Task
-                </button>
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    {isMobile && (
+                        <button 
+                            className={`btn ${isCompactView ? 'btn-primary' : 'btn-secondary'}`} 
+                            onClick={() => setIsCompactView(!isCompactView)}
+                            style={{ padding: '0.5rem' }}
+                            title={isCompactView ? "Expanded View" : "Compact View"}
+                        >
+                            {isCompactView ? <Maximize2 size={18} /> : <ListChecks size={18} />}
+                        </button>
+                    )}
+                    <button className="btn btn-primary" onClick={() => handleAddQuickTask()}>
+                        <Plus size={18} /> New Task
+                    </button>
+                </div>
             </div>
 
             <div className="tabs">
                 <div className={`tab ${activeTab === 'Table' ? 'active' : ''}`} onClick={() => setActiveTab('Table')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <LayoutList size={16} /> Table
                 </div>
-                {!isMobile && (
-                    <div className={`tab ${activeTab === 'Board' ? 'active' : ''}`} onClick={() => setActiveTab('Board')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Columns size={16} /> Kanban Board
-                    </div>
-                )}
+                <div className={`tab ${activeTab === 'Board' ? 'active' : ''}`} onClick={() => setActiveTab('Board')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Columns size={16} /> Kanban Board
+                </div>
                 <div className={`tab ${activeTab === 'Checklist' ? 'active' : ''}`} onClick={() => setActiveTab('Checklist')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <ListChecks size={16} /> Checklist
                 </div>
@@ -475,7 +563,7 @@ export default function Tasks() {
             <div className={`tasks-layout-container ${isEditing ? 'is-editing' : ''}`} style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
                 <div className="tasks-main-content" style={{ flex: isEditing ? '0 0 60%' : 1, overflow: 'auto', paddingRight: isEditing ? '1.5rem' : 0, transition: 'all 0.3s ease' }}>
                     {isMobile ? (
-                        activeTab === 'Checklist' ? renderChecklistView() : renderMobileCards()
+                        activeTab === 'Board' ? renderBoardView() : (activeTab === 'Checklist' ? renderChecklistView() : renderTableView())
                     ) : (
                         <>
                             {activeTab === 'Table' && renderTableView()}

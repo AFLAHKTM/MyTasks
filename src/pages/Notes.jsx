@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getNotes, saveNotes, getTasks, updateTask } from '../lib/data';
-import { StickyNote, Save, Trash2, FileText, Clock, ChevronRight } from 'lucide-react';
+import { StickyNote, Save, Trash2, FileText, Clock, ChevronRight, LayoutList } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,6 +13,8 @@ export default function Notes() {
     const [selectedTask, setSelectedTask] = useState(null);
     const [editingIdx, setEditingIdx] = useState(-1);
     const [editingText, setEditingText] = useState('');
+    const [isSidebarMinimized, setIsSidebarMinimized] = useState(false);
+    const [isCompact, setIsCompact] = useState(false);
 
     useEffect(() => {
         const handleDataSync = () => {
@@ -67,7 +69,7 @@ export default function Notes() {
     }, [content]);
 
     return (
-        <div className="page-container" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 4rem)', paddingBottom: '1rem' }}>
+        <div className="page-container notes-page-content" style={{ display: 'flex', flexDirection: 'column', minHeight: 'calc(100vh - 4rem)', paddingBottom: '2.5rem' }}>
             <div className="page-header" style={{ marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <div style={{ backgroundColor: 'var(--accent-light)', padding: '0.75rem', borderRadius: 'var(--radius-md)', color: 'var(--accent-primary)' }}>
@@ -101,13 +103,33 @@ export default function Notes() {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 1fr) 2fr', gap: '1.5rem', flex: 1, minHeight: 0 }}>
+            <div className={`notes-grid ${selectedTask ? 'task-selected' : ''}`}>
                 {/* Task Notes Sidebar */}
-                <div className="card" style={{ display: 'flex', flexDirection: 'column', padding: '1rem', overflow: 'hidden' }}>
-                    <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <FileText size={16} /> TASK-SPECIFIC NOTES
-                    </h3>
-                    <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div className="card notes-sidebar" style={{ display: 'flex', flexDirection: 'column', padding: '1rem', overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                        <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                            <FileText size={16} /> TASK-SPECIFIC NOTES
+                        </h3>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button 
+                                className="btn btn-secondary" 
+                                style={{ padding: '0.25rem', border: 'none', background: 'transparent' }}
+                                onClick={() => setIsCompact(!isCompact)}
+                                title={isCompact ? "Comfortable View" : "Compact View"}
+                            >
+                                <LayoutList size={16} style={{ opacity: isCompact ? 1 : 0.5 }} />
+                            </button>
+                            <button 
+                                className="btn btn-secondary" 
+                                style={{ padding: '0.25rem', border: 'none', background: 'transparent' }}
+                                onClick={() => setIsSidebarMinimized(!isSidebarMinimized)}
+                            >
+                                <ChevronRight size={16} style={{ transform: isSidebarMinimized ? 'rotate(90deg)' : 'rotate(-90deg)', transition: 'transform 0.2s' }} />
+                            </button>
+                        </div>
+                    </div>
+                    {!isSidebarMinimized && (
+                        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem' }} className={isCompact ? 'compact-list' : ''}>
                         {taskNotes.length === 0 ? (
                             <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>
                                 No tasks with notes found. Use the "Notes" status or add a log entry to a task.
@@ -138,10 +160,11 @@ export default function Notes() {
                             ))
                         )}
                     </div>
+                    )}
                 </div>
 
                 {/* Main Content Area */}
-                <div className="card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                <div className="card notes-editor" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
                     {selectedTask ? (
                         /* Task Log Interface */
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1.5rem', overflowY: 'auto' }}>
@@ -256,7 +279,7 @@ export default function Notes() {
                                 style={{
                                     flex: 1,
                                     width: '100%',
-                                    padding: '2rem',
+                                    padding: '1.25rem',
                                     background: 'transparent',
                                     border: 'none',
                                     outline: 'none',

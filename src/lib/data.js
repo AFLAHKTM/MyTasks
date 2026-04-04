@@ -183,23 +183,54 @@ const subscribeToChanges = () => {
     });
 };
 
+export const checkDailyReset = () => {
+  const lastReset = localStorage.getItem('antigravity_last_reset');
+  const today = new Date().toDateString();
+  
+  if (lastReset !== today) {
+    const tasks = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+    let changed = false;
+    const updatedTasks = tasks.map(t => {
+      // If task is recurring (has any days selected) and is Done
+      if (t.recurring_days && t.recurring_days.length > 0 && t.status === 'Done') {
+        changed = true;
+        return { ...t, status: 'Not started' };
+      }
+      return t;
+    });
+
+    if (changed) {
+      localStorage.setItem(DB_KEY, JSON.stringify(updatedTasks));
+      // Sync updated tasks to Supabase
+      const recurringDoneTasks = updatedTasks.filter((_, i) => tasks[i].status === 'Done' && updatedTasks[i].status === 'Not started');
+      if (recurringDoneTasks.length > 0) {
+        supabase.from('tasks').upsert(recurringDoneTasks).then(({ error }) => {
+          if (error) console.error('Daily Reset Sync Error:', error);
+        });
+      }
+      dispatchDataUpdate();
+    }
+    localStorage.setItem('antigravity_last_reset', today);
+  }
+};
+
 export const initDB = async () => {
-  // 1. Initial Local Setup (don't seed defaults yet, wait for cloud pull)
+  // 1. Check for daily reset (After 12 AM)
+  checkDailyReset();
+
+  // 2. Initial Local Setup (don't seed defaults yet, wait for cloud pull)
   const existingTasks = localStorage.getItem(DB_KEY);
   
-  // 2. Initial pull from cloud to catch updates from other devices
-  // This is the most important step for new devices to NOT overwrite cloud with defaults
+  // 3. Initial pull from cloud to catch updates from other devices
   await syncFromSupabase();
 
-  // 3. Start listening for changes
+  // 4. Start listening for changes
   subscribeToChanges();
 
-  // 4. Reconciliation: Only push if we have local data and we are fairly sure it's newer or unique
-  // For now, if local has data, ensure it's in the cloud
+  // 5. Reconciliation
   try {
     const tasks = getTasks();
     if (tasks.length > 0) {
-      console.log('Ensuring local data is backed up to cloud...');
       await supabase.from('tasks').upsert(tasks.map(t => ({
         id: t.id,
         title: t.title,
@@ -221,11 +252,10 @@ export const initDB = async () => {
     console.warn('Background reconciliation failed:', err);
   }
 
-  // 5. Setup Wake-up sync listeners (crucial for mobile sleep/wake)
+  // 6. Setup Wake-up sync listeners
   const syncFunc = () => {
-    console.log('Checking for updates...');
+    checkDailyReset(); 
     syncFromSupabase();
-    // Also re-verify subscription if multi-day sleep
     if (channel && channel.state === 'closed') subscribeToChanges();
   };
 
