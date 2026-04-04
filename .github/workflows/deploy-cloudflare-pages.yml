@@ -22,8 +22,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Install Wrangler
-        run: npm install -g @cloudflare/wrangler
 
       - name: Publish to Cloudflare Pages
         env:
@@ -32,4 +30,4 @@ jobs:
           CF_PAGES_PROJECT_NAME: ${{ secrets.CF_PAGES_PROJECT_NAME }}
           BRANCH_NAME: ${{ github.ref_name }}
         run: |
-          npx wrangler pages publish ./dist --project-name "$CF_PAGES_PROJECT_NAME" --branch "$BRANCH_NAME"
+          npx wrangler pages deploy ./dist --project-name "$CF_PAGES_PROJECT_NAME" --branch "$BRANCH_NAME"
