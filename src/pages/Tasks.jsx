@@ -22,6 +22,12 @@ export default function Tasks() {
     const [openDropdown, setOpenDropdown] = useState(null);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     const [isCompactView, setIsCompactView] = useState(false);
+    const [showTodayOnly, setShowTodayOnly] = useState(true);
+
+    const currentDayName = useMemo(() => {
+        const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+        return days[new Date().getDay()];
+    }, []);
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -60,7 +66,7 @@ export default function Tasks() {
             pOrder[p.name] = i;
         });
 
-        return [...tasks].sort((a, b) => {
+        const baseSorted = [...tasks].sort((a, b) => {
             // 1. Sort by Due Date (Ascending: Soonest first)
             const getTaskTime = (dueDate) => {
                 if (!dueDate) return Infinity;
@@ -84,7 +90,27 @@ export default function Tasks() {
             const createdB = b.created_at ? new Date(b.created_at).getTime() : 0;
             return createdB - createdA;
         });
-    }, [tasks, systemPriorities]);
+
+        if (!showTodayOnly) return baseSorted;
+
+        // Apply Today's Filter
+        return baseSorted.filter(task => {
+            // 1. If it's recurring, check if today is selected
+            if (task.recurring_days && task.recurring_days.length > 0) {
+                return task.recurring_days.includes(currentDayName) || task.all_day_recurring;
+            }
+            
+            // 2. If it has a specific due date, check if it's today
+            if (task.due_date) {
+                const todayStr = new Date().toISOString().split('T')[0];
+                return task.due_date.includes(todayStr);
+            }
+
+            // 3. If it has no schedule, show it in 'All' view only (or keep it if it's a backlog item)
+            // But for 'Today's Focus', we hide unscheduled items to keep it clean.
+            return false;
+        });
+    }, [tasks, systemPriorities, showTodayOnly, currentDayName]);
 
     const handleUpdate = (id, field, value) => {
         updateTask(id, { [field]: value });
@@ -601,6 +627,54 @@ export default function Tasks() {
                     )}
                     <button className="btn btn-primary" onClick={() => handleAddQuickTask()}>
                         <Plus size={18} /> New Task
+                    </button>
+                </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', background: 'var(--bg-secondary)', padding: '0.75rem 1.25rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
+                        <Calendar size={16} />
+                        <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>TODAY IS {currentDayName}</span>
+                    </div>
+                    <div className="divider-v" style={{ height: '16px', width: '1px', backgroundColor: 'var(--border-color)' }}></div>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>
+                        {showTodayOnly ? `Showing ${sortedTasks.length} Scheduled Tasks` : `Showing Full Backlog (${tasks.length} total)`}
+                    </span>
+                </div>
+                
+                <div className="filter-toggle" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '20px', padding: '3px' }}>
+                    <button 
+                        onClick={() => setShowTodayOnly(true)}
+                        style={{ 
+                            padding: '0.4rem 1.25rem', 
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            borderRadius: '18px', 
+                            border: 'none', 
+                            background: showTodayOnly ? 'var(--accent-primary)' : 'transparent',
+                            color: showTodayOnly ? 'white' : 'var(--text-tertiary)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                        }}
+                    >
+                        TODAY
+                    </button>
+                    <button 
+                        onClick={() => setShowTodayOnly(false)}
+                        style={{ 
+                            padding: '0.4rem 1.25rem', 
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            borderRadius: '18px', 
+                            border: 'none', 
+                            background: !showTodayOnly ? 'var(--accent-primary)' : 'transparent',
+                            color: !showTodayOnly ? 'white' : 'var(--text-tertiary)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                        }}
+                    >
+                        ALL
                     </button>
                 </div>
             </div>
