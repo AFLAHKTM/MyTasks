@@ -79,8 +79,8 @@ export default function TaskDetail() {
         const updated = updateTask(id, { [field]: value });
         setTask(updated);
 
-        // Automatically sync alarm if due date (with time) is set
-        if (field === 'due_date' && value) {
+        // Automate alarm sync for status, date, or title changes
+        if (['due_date', 'status', 'title'].includes(field)) {
             syncAlarmWithTask(updated);
         }
     };

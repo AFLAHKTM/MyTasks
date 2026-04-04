@@ -74,8 +74,8 @@ export default function Tasks() {
     const handleUpdate = (id, field, value) => {
         const updated = updateTask(id, { [field]: value });
         
-        // Automate alarm sync
-        if (field === 'due_date' && value) {
+        // Automate alarm sync for status, date, or title changes
+        if (['due_date', 'status', 'title'].includes(field)) {
             syncAlarmWithTask(updated);
         }
         

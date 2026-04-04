@@ -1469,9 +1469,81 @@ input:checked+.slider:before {
     gap: 1.5rem !important;
   }
 
-  /* Vertical Table for Mobile */
+  /* User-Friendly Mobile Kanban Board Theme */
+  .board {
+    flex-direction: column !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    height: auto !important;
+    gap: 1.5rem !important;
+    padding: 0 0.5rem 120px 0.5rem !important;
+  }
+
   .board-column {
-    min-width: 75vw !important;
+    min-width: 100% !important;
+    width: 100% !important;
+    flex: none;
+    height: auto !important;
+    border-radius: 1.25rem !important;
+    background: var(--bg-secondary) !important;
+    box-shadow: var(--shadow-md) !important;
+    border: 1px solid var(--border-color) !important;
+  }
+
+  .board-header {
+    font-size: 1.15rem !important;
+    padding: 1rem 0.75rem !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    margin-bottom: 0.75rem !important;
+    background: transparent !important;
+  }
+  
+  .task-card {
+    margin-bottom: 0.75rem !important;
+    box-shadow: var(--shadow-sm) !important;
+    border-radius: 0.875rem !important;
+    background: var(--bg-primary) !important;
+  }
+  
+  /* Mobile Bottom Sheet Dropdown for easy status changing */
+  .glass-dropdown {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 95px !important; /* position above bottom nav */
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
+    max-width: none !important;
+    transform: none !important;
+    z-index: 10000 !important;
+    border-radius: 1.25rem !important;
+    padding: 0.5rem !important;
+    background: rgba(30, 30, 30, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5) !important;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  [data-theme='light'] .glass-dropdown {
+    background: rgba(255, 255, 255, 0.95) !important;
+  }
+
+  .glass-dropdown-item {
+    padding: 1rem !important;
+    font-size: 1.05rem !important;
+    text-align: center;
+    border-bottom: 1px solid rgba(128,128,128,0.1) !important;
+    justify-content: center !important;
+    display: flex !important;
+  }
+  
+  .glass-dropdown-item:last-child {
+    border-bottom: none !important;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .table-container {

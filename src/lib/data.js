@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = 'https://zgxulqlhvctazxapqtvk.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpneHVscWxodmN0YXp4YXBxdHZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1ODg2MTYsImV4cCI6MjA4ODE2NDYxNn0.tlCVE96oQLFa-enBtAKh125UCdwET5Kt8ImRBnBho2A';
+const SUPABASE_URL = 'https://ikpumjioqkssnbrplgph.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlrcHVtamlvcWtzc25icnBsZ3BoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0OTcyNzIsImV4cCI6MjA4OTA3MzI3Mn0.PD-yDElsmaZ2l9RynXYUxO_Cw65-PT0f16jpNEXiJN0';
 const isElectron = typeof window !== 'undefined' && window.electronIPC !== undefined;
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -116,17 +116,26 @@ const syncFromSupabase = async () => {
     const remoteTasks = tasksRes.data || [];
     const localTasks = getTasks();
     
-    // 1. Handle Synchronization logic
-    if (remoteTasks.length > 0) {
-      // Cloud is Truth. Update local. 
-      // Note: We blindly overwrite local here for simplicity. 
-      // If we had updatedAt, we'd do a more complex merge.
-      localStorage.setItem(DB_KEY, JSON.stringify(remoteTasks));
-    } else if (localTasks.length > 0) {
-      // Cloud is empty but we have local data. Push local to Cloud.
-      // This happens when a user starts offline then connects.
-      console.log('Pushing local-only data to cloud...');
-      await supabase.from('tasks').upsert(localTasks.map(t => ({
+    // 1. Handle Synchronization logic (Merge local and remote)
+    const taskMap = new Map();
+    localTasks.forEach(t => taskMap.set(t.id, t));
+    
+    let needsPush = false;
+    remoteTasks.forEach(remoteTask => {
+      const localTask = taskMap.get(remoteTask.id);
+      if (!localTask || new Date(remoteTask.updated_at) > new Date(localTask.updated_at || 0)) {
+        taskMap.set(remoteTask.id, remoteTask);
+      } else if (new Date(localTask.updated_at || 0) > new Date(remoteTask.updated_at)) {
+        needsPush = true;
+      }
+    });
+
+    const mergedTasks = Array.from(taskMap.values());
+    localStorage.setItem(DB_KEY, JSON.stringify(mergedTasks));
+
+    if (needsPush || (localTasks.length > 0 && remoteTasks.length === 0)) {
+      console.log('Pushing local updates to cloud...');
+      await supabase.from('tasks').upsert(mergedTasks.map(t => ({
         id: t.id,
         title: t.title,
         assignee: t.assignee,
@@ -135,9 +144,10 @@ const syncFromSupabase = async () => {
         status: t.status,
         content: t.content,
         notes: t.notes || [],
-        created_at: t.created_at || new Date().toISOString()
+        created_at: t.created_at || new Date().toISOString(),
+        updated_at: t.updated_at || new Date().toISOString()
       })));
-    } else {
+    } else if (remoteTasks.length === 0 && localTasks.length === 0) {
       // BOTH are empty. Seed defaults.
       console.log('Fresh workspace detected. Seeding defaults...');
       localStorage.setItem(DB_KEY, JSON.stringify(DEFAULT_TASKS));
@@ -213,26 +223,27 @@ export const initDB = async () => {
   // 4. Reconciliation: Only push if we have local data and we are fairly sure it's newer or unique
   // For now, if local has data, ensure it's in the cloud
   try {
-    const tasks = getTasks();
-    if (tasks.length > 0) {
-      console.log('Ensuring local data is backed up to cloud...');
-      await supabase.from('tasks').upsert(tasks.map(t => ({
-        id: t.id,
-        title: t.title,
-        assignee: t.assignee,
-        due_date: t.due_date,
-        priority: t.priority,
-        status: t.status,
-        content: t.content,
-        notes: t.notes || [],
-        created_at: t.created_at || new Date().toISOString()
-      })));
-      
-      const localNotes = getNotes();
-      if (localNotes) {
-        await supabase.from('workspace_notes').upsert({ id: 'main', content: localNotes });
+      const tasks = getTasks();
+      if (tasks.length > 0) {
+        console.log('Ensuring local data is backed up to cloud during initialization...');
+        await supabase.from('tasks').upsert(tasks.map(t => ({
+          id: t.id,
+          title: t.title,
+          assignee: t.assignee,
+          due_date: t.due_date,
+          priority: t.priority,
+          status: t.status,
+          content: t.content,
+          notes: t.notes || [],
+          created_at: t.created_at || new Date().toISOString(),
+          updated_at: t.updated_at || new Date().toISOString()
+        })));
+        
+        const localNotes = getNotes();
+        if (localNotes) {
+          await supabase.from('workspace_notes').upsert({ id: 'main', content: localNotes, updated_at: new Date().toISOString() });
+        }
       }
-    }
   } catch (err) {
     console.warn('Background reconciliation failed:', err);
   }
@@ -258,11 +269,12 @@ export const getWorkspaceConfig = () => {
 };
 
 export const saveWorkspaceConfig = (config) => {
-  localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(config));
+  const updatedConfig = { ...config, updated_at: new Date().toISOString() };
+  localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(updatedConfig));
   dispatchDataUpdate();
 
   // Update Supabase
-  supabase.from('workspace_config').update(config).eq('id', 'default').then(({ error }) => {
+  supabase.from('workspace_config').upsert({ id: 'default', ...updatedConfig }).then(({ error }) => {
     if (error) console.error('Supabase Config Update Error:', error);
   });
 };
@@ -273,12 +285,20 @@ export const getStatuses = () => {
 };
 
 export const saveStatuses = (statuses) => {
-  localStorage.setItem(DB_STATUSES_KEY, JSON.stringify(statuses));
+  const now = new Date().toISOString();
+  const updatedStatuses = statuses.map(s => ({ ...s, updated_at: now }));
+  localStorage.setItem(DB_STATUSES_KEY, JSON.stringify(updatedStatuses));
   dispatchDataUpdate();
 
   // Update Supabase
-  supabase.from('statuses').delete().neq('id', '00000000-0000-0000-0000-000000000000')
-    .then(() => supabase.from('statuses').insert(statuses.map(s => ({ name: s.name, color: s.color, is_default: !!s.isDefault }))));
+  supabase.from('statuses').upsert(updatedStatuses.map(s => ({ 
+    name: s.name, 
+    color: s.color, 
+    is_default: !!s.isDefault,
+    updated_at: s.updated_at
+  }))).then(({ error }) => {
+    if (error) console.error('Supabase Statuses Update Error:', error);
+  });
 };
 
 export const getPriorities = () => {
@@ -287,11 +307,19 @@ export const getPriorities = () => {
 };
 
 export const savePriorities = (priorities) => {
-  localStorage.setItem(DB_PRIORITIES_KEY, JSON.stringify(priorities));
+  const now = new Date().toISOString();
+  const updatedPriorities = priorities.map(p => ({ ...p, updated_at: now }));
+  localStorage.setItem(DB_PRIORITIES_KEY, JSON.stringify(updatedPriorities));
   dispatchDataUpdate();
 
-  supabase.from('priorities').delete().neq('id', '00000000-0000-0000-0000-000000000000')
-    .then(() => supabase.from('priorities').insert(priorities.map(p => ({ name: p.name, color: p.color, is_default: !!p.isDefault }))));
+  supabase.from('priorities').upsert(updatedPriorities.map(p => ({ 
+    name: p.name, 
+    color: p.color, 
+    is_default: !!p.isDefault,
+    updated_at: p.updated_at
+  }))).then(({ error }) => {
+    if (error) console.error('Supabase Priorities Update Error:', error);
+  });
 };
 
 export const getTasks = () => {
@@ -308,7 +336,8 @@ export const createTask = (taskData) => {
     ...taskData,
     id: uuidv4(),
     notes: taskData.notes || [],
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   };
 
   const tasks = getTasks();
@@ -328,7 +357,7 @@ export const updateTask = (id, updates) => {
   const tasks = getTasks();
   const idx = tasks.findIndex(t => t.id === id);
   if (idx !== -1) {
-    tasks[idx] = { ...tasks[idx], ...updates };
+    tasks[idx] = { ...tasks[idx], ...updates, updated_at: new Date().toISOString() };
     localStorage.setItem(DB_KEY, JSON.stringify(tasks));
     dispatchDataUpdate();
 
@@ -360,11 +389,15 @@ export const getNotes = () => {
 };
 
 export const saveNotes = (content) => {
+  const now = new Date().toISOString();
   localStorage.setItem(DB_NOTES_KEY, JSON.stringify(content));
+  // Note: We might want to store notes as an object with updated_at locally as well, 
+  // but for now let's keep it simple and just use an extra key or assume simple notes.
+  // Actually, let's just push it with the timestamp.
   dispatchDataUpdate();
 
   // Push to Supabase
-  supabase.from('workspace_notes').upsert({ id: 'main', content: content }).then(({ error }) => {
+  supabase.from('workspace_notes').upsert({ id: 'main', content: content, updated_at: now }).then(({ error }) => {
     if (error) console.error('Supabase Notes Update Error:', error);
   });
 };

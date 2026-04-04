@@ -51,10 +51,33 @@ export const AlarmProvider = ({ children }) => {
         
         // Initial fetch of alarms from Supabase
         const fetchAlarms = async () => {
-            const { data } = await supabaseAlarms.from('alarms').select('*');
-            if (data && data.length > 0) {
-               setAlarms(data);
-               localStorage.setItem('app_alarms', JSON.stringify(data));
+            const { data: remoteAlarms } = await supabaseAlarms.from('alarms').select('*');
+            if (remoteAlarms) {
+               const localAlarms = JSON.parse(localStorage.getItem('app_alarms') || '[]');
+               const alarmMap = new Map();
+               localAlarms.forEach(a => alarmMap.set(a.id, a));
+
+               let needsPush = false;
+               remoteAlarms.forEach(remoteAlarm => {
+                   const localAlarm = alarmMap.get(remoteAlarm.id);
+                   if (!localAlarm || new Date(remoteAlarm.updated_at) > new Date(localAlarm.updated_at || 0)) {
+                       alarmMap.set(remoteAlarm.id, remoteAlarm);
+                   } else if (new Date(localAlarm.updated_at || 0) > new Date(remoteAlarm.updated_at)) {
+                       needsPush = true;
+                   }
+               });
+
+               const mergedAlarms = Array.from(alarmMap.values());
+               setAlarms(mergedAlarms);
+               localStorage.setItem('app_alarms', JSON.stringify(mergedAlarms));
+
+               if (needsPush || (localAlarms.length > 0 && remoteAlarms.length === 0)) {
+                   console.log('Pushing local alarms to cloud...');
+                   await supabaseAlarms.from('alarms').upsert(mergedAlarms.map(a => ({
+                       ...a,
+                       updated_at: a.updated_at || new Date().toISOString()
+                   })));
+               }
             }
         };
         fetchAlarms();
@@ -190,7 +213,8 @@ export const AlarmProvider = ({ children }) => {
                 ...alarm, 
                 id: Date.now().toString(), 
                 status: 'active',
-                trigger_utc: triggerDate.toISOString()
+                trigger_utc: triggerDate.toISOString(),
+                updated_at: new Date().toISOString()
             };
             
             console.log('Created local alarm object:', newAlarm);
@@ -222,8 +246,11 @@ export const AlarmProvider = ({ children }) => {
         }
     
         const payload = trigger_utc ? { ...updatedAlarm, trigger_utc } : updatedAlarm;
-        setAlarms(prev => prev.map(a => a.id === id ? { ...a, ...payload } : a));
-        await supabaseAlarms.from('alarms').update(payload).eq('id', id);
+        const now = new Date().toISOString();
+        const fullPayload = { ...payload, updated_at: now };
+        
+        setAlarms(prev => prev.map(a => a.id === id ? { ...a, ...fullPayload } : a));
+        await supabaseAlarms.from('alarms').update(fullPayload).eq('id', id);
     };
 
     const deleteAlarm = async (id) => {
@@ -232,13 +259,27 @@ export const AlarmProvider = ({ children }) => {
     };
 
     const syncAlarmWithTask = async (task) => {
+        const existing = alarms.find(a => a.task_id === task.id);
+
+        // If task is Done, remove any existing alarm
+        if (task.status === 'Done') {
+            if (existing) {
+                await deleteAlarm(existing.id);
+            }
+            return;
+        }
+
+        // Only sync if it has a due date with time
         if (!task.due_date) return;
         
         // Parse "YYYY-MM-DD - HH:mm"
         const [date, time] = task.due_date.split(' - ');
-        if (!date || !time) return;
+        if (!date || !time) {
+            // If it has a date but no time, we might want to remove the alarm if it was there
+            if (existing) await deleteAlarm(existing.id);
+            return;
+        }
 
-        const existing = alarms.find(a => a.task_id === task.id);
         const alarmData = {
             title: `Task: ${task.title || 'Untitled'}`,
             date,
@@ -249,7 +290,13 @@ export const AlarmProvider = ({ children }) => {
         };
 
         if (existing) {
-            await updateAlarm(existing.id, alarmData);
+            // Only update if something actually changed to avoid infinite loops or extra writes
+            if (existing.title !== alarmData.title || 
+                existing.date !== alarmData.date || 
+                existing.time !== alarmData.time ||
+                existing.status === 'completed') {
+                await updateAlarm(existing.id, alarmData);
+            }
         } else {
             await addAlarm(alarmData);
         }
