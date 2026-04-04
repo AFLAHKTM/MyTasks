@@ -1637,4 +1637,28 @@ input:checked+.slider:before {
     margin: 0 !important;
     border-left: none !important;
   }
+
+  /* Kanban Board Mobile Optimization */
+  .board {
+    gap: 1.5rem !important;
+    padding: 0.5rem 1rem 2rem 1rem !important;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    width: auto !important;
+    max-width: none !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .board-column {
+    min-width: 85vw !important;
+    max-width: 85vw !important;
+    scroll-snap-align: center;
+    height: auto !important;
+    flex: 0 0 85vw !important;
+    border-radius: var(--radius-lg) !important;
+    background-color: var(--card-gray-bg) !important;
+    margin-right: 0 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  }
 }
