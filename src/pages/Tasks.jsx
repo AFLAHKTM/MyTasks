@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { getTasks, updateTask, deleteTask, createTask, getStatuses, saveStatuses, getPriorities } from '../lib/data';
 import { NavLink, useNavigate, Outlet, useMatch } from 'react-router-dom';
-import { Columns, LayoutList, Plus, MoreHorizontal, FileText, Type, Users, Calendar, AlertCircle, Maximize2, ListChecks, Edit3, ArrowUpDown, Trash2 } from 'lucide-react';
+import { Columns, LayoutList, Plus, MoreHorizontal, FileText, Type, Users, Calendar, AlertCircle, Maximize2, ListChecks, Edit3, ArrowUpDown, Trash2, Check, CheckCircle } from 'lucide-react';
 import { useAlarms } from '../lib/AlarmContext';
 import GlassDatePicker from '../components/GlassDatePicker';
 import { formatTaskDate } from '../lib/utils';
@@ -36,6 +36,17 @@ export default function Tasks() {
             window.removeEventListener('storage', handleDataSync);
         };
     }, []);
+
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth <= 768 && activeTab === 'Board') {
+                setActiveTab('Table');
+            }
+        };
+        handleResize(); // Check on mount/tab change
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [activeTab]);
 
     const refreshTasks = () => setTasks(getTasks());
     
@@ -154,7 +165,7 @@ export default function Tasks() {
         }
 
         return (
-            <span className={className} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <span className={className} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
                 {type === 'status' && (
                     <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: dotColor, opacity: 0.8 }}></div>
                 )}
@@ -241,89 +252,38 @@ export default function Tasks() {
         </div>
     );
 
-    const renderChecklistView = () => (
-        <div style={{ backgroundColor: 'transparent', height: '100%', overflow: 'visible' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', color: 'var(--text-primary)' }}>
-                <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
-                        <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 400, borderRight: '1px solid var(--border-color)', width: '35%' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-                                <Type size={16} /> Task <AlertCircle size={12} style={{ opacity: 0.5 }} />
-                            </div>
-                        </th>
-                        <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 400, borderRight: '1px solid var(--border-color)', width: '15%' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-                                <div style={{ width: '14px', height: '14px', borderRadius: '50%', border: '2px dotted var(--text-tertiary)' }}></div> Status <AlertCircle size={12} style={{ opacity: 0.5 }} />
-                            </div>
-                        </th>
-                        <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 400, borderRight: '1px solid var(--border-color)', width: '20%' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-                                <Users size={16} /> Assignee <AlertCircle size={12} style={{ opacity: 0.5 }} />
-                            </div>
-                        </th>
-                        <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 400, borderRight: '1px solid var(--border-color)', width: '15%' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-                                <Calendar size={16} /> Due <AlertCircle size={12} style={{ opacity: 0.5 }} />
-                            </div>
-                        </th>
-                        <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 400, borderRight: '1px solid var(--border-color)', width: '10%' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-                                <AlertCircle size={16} /> Priority <AlertCircle size={12} style={{ opacity: 0.5 }} />
-                            </div>
-                        </th>
-                        <th style={{ padding: '0.75rem 1rem', textAlign: 'center', width: '5%' }}>
-                            <Plus size={16} style={{ cursor: 'pointer', opacity: 0.5 }} />
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {sortedTasks.map(task => (
-                        <tr key={task.id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background-color 0.1s', ':hover': { backgroundColor: 'rgba(255,255,255,0.03)' } }}>
-                            <td style={{ padding: '0.75rem 1rem', borderRight: '1px solid var(--border-color)' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={task.status === 'Done'}
-                                        onChange={(e) => handleUpdate(task.id, 'status', e.target.checked ? 'Done' : 'Not started')}
-                                        style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: 'var(--badge-green-text)' }}
-                                    />
-                                    <span style={{ cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem', textDecoration: task.status === 'Done' ? 'line-through' : 'none', opacity: task.status === 'Done' ? 0.5 : 1 }} onClick={() => navigate(`/tasks/${task.id}`)}>
-                                        {task.title || 'Untitled'}
-                                    </span>
+    const renderChecklistView = () => {
+        return (
+            <div className="checklist-container">
+                {sortedTasks.map(task => {
+                    const isDone = task.status === 'Done';
+                    return (
+                        <div key={task.id} className={`checklist-item ${isDone ? 'is-done' : ''}`} onClick={() => navigate(`/tasks/${task.id}`)}>
+                            <div className="checklist-checkbox" onClick={(e) => { e.stopPropagation(); handleUpdate(task.id, 'status', isDone ? 'Not started' : 'Done'); }}>
+                                <div className={`custom-checkbox ${isDone ? 'checked' : ''}`}>
+                                    {isDone && <Check size={14} strokeWidth={3} color="white" />}
                                 </div>
-                            </td>
-                            <td style={{ padding: '0.75rem 1rem', borderRight: '1px solid var(--border-color)', position: 'relative', overflow: 'visible' }}>
-                                {renderGlassDropdown(task, 'status', systemStatuses)}
-                            </td>
-                            <td style={{ padding: '0.75rem 1rem', borderRight: '1px solid var(--border-color)' }}>
-                                {task.assignee && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', fontWeight: 600 }}>
-                                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: 'var(--accent-primary)', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '10px', fontWeight: 'bold', flexShrink: 0 }}>{task.assignee.charAt(0).toUpperCase()}</div>
-                                        {task.assignee.toUpperCase()}
-                                    </div>
-                                )}
-                            </td>
-                            <td style={{ padding: '0.75rem 1rem', borderRight: '1px solid var(--border-color)' }}>
-                                <GlassDatePicker value={task.due_date} onChange={val => handleUpdate(task.id, 'due_date', val)} placeholder="None" />
-                            </td>
-                            <td style={{ padding: '0.75rem 1rem', borderRight: '1px solid var(--border-color)', position: 'relative', overflow: 'visible' }}>
-                                {renderGlassDropdown(task, 'priority', systemPriorities)}
-                            </td>
-                            <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
-                            </td>
-                        </tr>
-                    ))}
-                    <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-                        <td colSpan="6" style={{ padding: '0.75rem 1rem' }}>
-                            <button onClick={() => handleAddQuickTask()} style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
-                                <Plus size={16} /> New page
-                            </button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    );
+                            </div>
+                            <div className="checklist-content">
+                                <span className="checklist-title">
+                                    {task.title || 'Untitled'}
+                                </span>
+                                <div className="checklist-meta" onClick={e => e.stopPropagation()}>
+                                    {renderGlassDropdown(task, 'status', systemStatuses)}
+                                    {renderGlassDropdown(task, 'priority', systemPriorities)}
+                                    <GlassDatePicker value={task.due_date} onChange={val => handleUpdate(task.id, 'due_date', val)} placeholder="No Date" />
+                                </div>
+
+                            </div>
+                        </div>
+                    );
+                })}
+                <button onClick={() => handleAddQuickTask()} className="checklist-add-btn">
+                    <Plus size={16} /> Add new task
+                </button>
+            </div>
+        );
+    };
 
     const renderBoardView = () => {
         const statuses = systemStatuses.map(s => s.name);
@@ -401,6 +361,56 @@ export default function Tasks() {
         );
     };
 
+    const renderReviewView = () => {
+        const completedTasks = sortedTasks.filter(t => t.status === 'Done');
+
+        if (completedTasks.length === 0) {
+            return (
+                <div style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-secondary)' }}>
+                    <div style={{ backgroundColor: 'var(--bg-secondary)', width: 80, height: 80, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', opacity: 0.5 }}>
+                        <CheckCircle size={40} />
+                    </div>
+                    <h3 style={{ marginBottom: '0.5rem', color: 'var(--text-primary)' }}>No Completed Tasks</h3>
+                    <p style={{ fontSize: '0.875rem' }}>When you finish your tasks, you can review them here.</p>
+                </div>
+            );
+        }
+
+        return (
+            <div className="review-container" style={{ padding: '0.5rem' }}>
+                <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
+                    {completedTasks.map(task => (
+                        <div key={task.id} className="task-card" onClick={() => navigate(`/tasks/${task.id}`)} style={{ opacity: 0.85, cursor: 'pointer', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '1rem', padding: '1.25rem', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', marginBottom: '1rem' }}>
+                                <div style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                    <Check size={20} color="white" />
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontWeight: 600, fontSize: '1.05rem', color: 'var(--text-primary)', textDecoration: 'line-through', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{task.title || 'Untitled'}</div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Completed</div>
+                                </div>
+                            </div>
+                            <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    {task.assignee && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                            <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: 'var(--accent-primary)', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '10px', fontWeight: 'bold' }}>{task.assignee.charAt(0).toUpperCase()}</div>
+                                        </div>
+                                    )}
+                                </div>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button onClick={(e) => { e.stopPropagation(); handleUpdate(task.id, 'status', 'Not started'); }} className="btn" style={{ fontSize: '0.75rem', padding: '0.35rem 0.6rem', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '0.5rem' }}>
+                                        Mark Incomplete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="page-container" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <div className="page-header" style={{ marginBottom: '1rem' }}>
@@ -417,11 +427,14 @@ export default function Tasks() {
                 <div className={`tab ${activeTab === 'Table' ? 'active' : ''}`} onClick={() => setActiveTab('Table')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <LayoutList size={16} /> Table
                 </div>
-                <div className={`tab ${activeTab === 'Board' ? 'active' : ''}`} onClick={() => setActiveTab('Board')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div className={`tab hide-on-mobile ${activeTab === 'Board' ? 'active' : ''}`} onClick={() => setActiveTab('Board')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Columns size={16} /> Kanban Board
                 </div>
                 <div className={`tab ${activeTab === 'Checklist' ? 'active' : ''}`} onClick={() => setActiveTab('Checklist')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <ListChecks size={16} /> Checklist
+                </div>
+                <div className={`tab ${activeTab === 'Review' ? 'active' : ''}`} onClick={() => setActiveTab('Review')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <CheckCircle size={16} /> Review
                 </div>
             </div>
 
@@ -430,6 +443,7 @@ export default function Tasks() {
                     {activeTab === 'Table' && renderTableView()}
                     {activeTab === 'Board' && renderBoardView()}
                     {activeTab === 'Checklist' && renderChecklistView()}
+                    {activeTab === 'Review' && renderReviewView()}
                 </div>
                 {isEditing && (
                     <div className="tasks-detail-sidebar" style={{ flex: '1', borderLeft: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)', overflowY: 'auto', paddingLeft: '1.5rem', marginLeft: '1.5rem' }}>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getTasks } from '../lib/data';
 import { NavLink } from 'react-router-dom';
-import { Activity, Plus, Calendar as CalendarIcon, ArrowRight, CheckCircle } from 'lucide-react';
+import { Activity, Plus, Calendar as CalendarIcon, ArrowRight, CheckCircle, Clock, Target } from 'lucide-react';
 import { isSameDay, format, isPast } from 'date-fns';
 import { formatTaskDate } from '../lib/utils';
 
@@ -21,112 +21,191 @@ export default function Home() {
         };
     }, []);
 
-    const todayTasks = tasks.filter(t => {
-        if (t.status === 'Done') return false;
-        if (!t.status) return false;
-        if (!t.due_date) return false;
-        const d = new Date(t.due_date.split(' - ')[0]);
-        return isSameDay(d, new Date()) || d < new Date();
-    }).sort((a, b) => new Date(a.due_date.split(' - ')[0]) - new Date(b.due_date.split(' - ')[0]));
-    const todaySummaryTasks = tasks.filter(t => {
-        if (!t.status) return false;
-        if (!t.due_date) return false;
-        const d = new Date(t.due_date.split(' - ')[0]);
-        return isSameDay(d, new Date()) || d < new Date();
-    });
-
-    const total = todaySummaryTasks.length;
-    const completed = todaySummaryTasks.filter(t => t.status === 'Done').length;
+    const total = tasks.length;
+    const completed = tasks.filter(t => t.status === 'Done').length;
+    const inProgress = tasks.filter(t => t.status === 'In progress').length;
+    const notStarted = tasks.filter(t => t.status === 'Not started' || !t.status).length;
+    
     const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    const overdue = tasks.filter(t => t.status && t.due_date && isPast(new Date(t.due_date.split(' - ')[0])) && !isSameDay(new Date(t.due_date.split(' - ')[0]), new Date()) && t.status !== 'Done')
+        .sort((a, b) => new Date(a.due_date.split(' - ')[0]) - new Date(b.due_date.split(' - ')[0]));
+    
+    const dueToday = tasks.filter(t => t.status && t.due_date && isSameDay(new Date(t.due_date.split(' - ')[0]), new Date()) && t.status !== 'Done')
+        .sort((a, b) => new Date(a.due_date.split(' - ')[0]) - new Date(b.due_date.split(' - ')[0]));
+
+    const StatCard = ({ title, value, icon, color }) => (
+        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.25rem' }}>
+            <div style={{ padding: '0.75rem', borderRadius: 'var(--radius-md)', backgroundColor: `${color}15`, color: color }}>
+                {icon}
+            </div>
+            <div>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>{title}</p>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '0.25rem' }}>{value}</h3>
+            </div>
+        </div>
+    );
+
+    const handleGenerateReport = () => {
+        const headers = "Task ID,Title,Status,Priority,Due Date,Assignee\n";
+        const rows = tasks.map(t =>
+            `${t.id},"${(t.title || 'Untitled').replace(/"/g, '""')}","${t.status || 'No Status'}","${t.priority || 'Empty'}","${t.due_date ? t.due_date.split('T')[0] : 'None'}","${(t.assignee || 'Unassigned').replace(/"/g, '""')}"`
+        ).join("\n");
+
+        const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Workspace_Report_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     return (
         <div className="page-container" style={{ margin: '0 auto', width: '100%', maxWidth: '1000px', padding: '3rem 2rem' }}>
-            <header className="page-header" style={{ marginBottom: '3rem' }}>
+            <header className="page-header" style={{ marginBottom: '2rem' }}>
                 <div>
                     <h1 style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--accent-primary)', letterSpacing: '-0.025em' }}>Good {new Date().getHours() < 12 ? 'morning' : 'afternoon'}, User</h1>
                     <p className="page-subtitle" style={{ fontSize: '1.125rem' }}>Here is your overview for {format(new Date(), 'EEEE, MMMM do')}.</p>
                 </div>
                 <div style={{ display: 'flex', gap: '1rem' }}>
-                    <NavLink to="/dashboard" className="btn btn-secondary">Enter Workspace</NavLink>
                     <NavLink to="/create-task" className="btn btn-primary"><Plus size={18} /> Quick Add</NavLink>
                 </div>
             </header>
 
-            <div className="home-dashboard-grid">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+                <StatCard title="Total Tasks" value={total} icon={<Activity size={24} />} color="var(--accent-primary)" />
+                <StatCard title="Completed" value={completed} icon={<CheckCircle size={24} />} color="var(--success)" />
+                <StatCard title="In Progress" value={inProgress} icon={<Clock size={24} />} color="var(--badge-blue-text)" />
+                <StatCard title="To Do" value={notStarted} icon={<Target size={24} />} color="var(--text-tertiary)" />
+            </div>
+
+            <div className="home-dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '2rem', marginBottom: '2rem' }}>
                 <div className="card">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
-                        <CalendarIcon size={20} color="var(--accent-primary)" />
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Action Items (Today)</h2>
+                        <CalendarIcon size={20} color="var(--danger)" />
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Priority Action Items</h2>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {todayTasks.length === 0 ? (
-                            <div style={{ padding: '2.5rem 1rem', textAlign: 'center', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--border-hover)' }}>
-                                <CheckCircle size={32} color="var(--success)" style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
-                                <p style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>No pending tasks for today.</p>
-                                <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)', marginTop: '0.25rem' }}>Enjoy your free time!</p>
-                            </div>
-                        ) : (
-                            todayTasks.map(task => (
-                                <NavLink key={task.id} to={`/tasks/${task.id}`} className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'box-shadow 0.2s, transform 0.2s', textDecoration: 'none', ':hover': { transform: 'translateY(-2px)' } }}>
-                                    <div>
-                                        <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>{task.title}</h3>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                                            {isPast(new Date(task.due_date)) && !isSameDay(new Date(task.due_date), new Date()) && (
-                                                <span style={{ color: 'var(--danger)', fontWeight: 700, backgroundColor: 'var(--badge-red-bg)', padding: '2px 6px', borderRadius: '4px' }}>OVERDUE</span>
-                                            )}
-                                            {task.due_date && <span>📅 {formatTaskDate(task.due_date)}</span>}
-                                            {task.assignee && <span>👤 {task.assignee}</span>}
-                                            {task.priority === 'High' && <span style={{ color: 'var(--danger)', fontWeight: 500 }}>High Priority</span>}
+                    {overdue.length > 0 && (
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <h3 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--danger)', fontWeight: 600, marginBottom: '0.5rem' }}>Overdue</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                {overdue.slice(0, 3).map(task => (
+                                    <NavLink key={task.id} to={`/tasks/${task.id}`} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '1rem', border: '1px solid var(--badge-red-border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--badge-red-bg)', color: 'var(--text-primary)', transition: 'transform 0.2s', ':hover': { transform: 'translateX(4px)' } }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                            <span style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{task.title || 'Untitled'}</span>
+                                            <ArrowRight size={16} color="var(--text-tertiary)" />
                                         </div>
+                                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                            <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px', backgroundColor: 'rgba(0,0,0,0.2)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--text-tertiary)' }}></div>
+                                                {task.status || 'No Status'}
+                                            </span>
+                                            {task.priority && (
+                                                <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px', backgroundColor: task.priority === 'High' ? 'var(--badge-red-bg)' : task.priority === 'Medium' ? 'var(--badge-yellow-bg)' : 'var(--badge-green-bg)', color: task.priority === 'High' ? 'var(--badge-red-text)' : task.priority === 'Medium' ? 'var(--badge-yellow-text)' : 'var(--badge-green-text)', fontWeight: 600, border: `1px solid ${task.priority === 'High' ? 'var(--badge-red-border)' : task.priority === 'Medium' ? 'var(--badge-yellow-border)' : 'var(--badge-green-border)'}` }}>
+                                                    {task.priority}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </NavLink>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    <div>
+                        <h3 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '0.5rem' }}>Due Today</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {dueToday.length === 0 ? <p style={{ fontSize: '0.875rem' }}>No tasks due today.</p> : dueToday.slice(0, 3).map(task => (
+                                <NavLink key={task.id} to={`/tasks/${task.id}`} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', transition: 'transform 0.2s', ':hover': { transform: 'translateX(4px)' } }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                        <span style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{task.title || 'Untitled'}</span>
+                                        <ArrowRight size={16} color="var(--text-tertiary)" />
                                     </div>
-                                    <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '0.5rem', borderRadius: '50%' }}>
-                                        <ArrowRight size={20} color="var(--accent-primary)" />
+                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                        <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--text-tertiary)' }}></div>
+                                            {task.status || 'No Status'}
+                                        </span>
+                                        {task.priority && (
+                                            <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px', backgroundColor: task.priority === 'High' ? 'var(--badge-red-bg)' : task.priority === 'Medium' ? 'var(--badge-yellow-bg)' : 'var(--badge-green-bg)', color: task.priority === 'High' ? 'var(--badge-red-text)' : task.priority === 'Medium' ? 'var(--badge-yellow-text)' : 'var(--badge-green-text)', fontWeight: 600, border: `1px solid ${task.priority === 'High' ? 'var(--badge-red-border)' : task.priority === 'Medium' ? 'var(--badge-yellow-border)' : 'var(--badge-green-border)'}` }}>
+                                                {task.priority}
+                                            </span>
+                                        )}
                                     </div>
                                 </NavLink>
-                            ))
-                        )}
+                            ))}
+                        </div>
                     </div>
                 </div>
 
-                <div className="card" style={{ display: 'flex', flexDirection: 'column', height: 'fit-content' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
-                        <Activity size={20} color="var(--accent-primary)" />
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Performance</h2>
-                    </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+                            <Activity size={20} color="var(--accent-primary)" />
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Performance</h2>
+                        </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2rem' }}>
-                        <div style={{ position: 'relative', width: '160px', height: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <svg width="160" height="160" viewBox="0 0 160 160" style={{ transform: 'rotate(-90deg)' }}>
-                                <circle cx="80" cy="80" r="70" fill="none" stroke="var(--bg-secondary)" strokeWidth="16" />
-                                <circle
-                                    cx="80" cy="80" r="70" fill="none"
-                                    stroke="var(--accent-primary)"
-                                    strokeWidth="16"
-                                    strokeDasharray={`${2 * Math.PI * 70}`}
-                                    strokeDashoffset={`${2 * Math.PI * 70 * (1 - progress / 100)}`}
-                                    strokeLinecap="round"
-                                    style={{ transition: 'stroke-dashoffset 1s ease-out' }}
-                                />
-                            </svg>
-                            <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <span style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>{progress}%</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1rem' }}>
+                            <div style={{ position: 'relative', width: '160px', height: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <svg width="160" height="160" viewBox="0 0 160 160" style={{ transform: 'rotate(-90deg)' }}>
+                                    <circle cx="80" cy="80" r="70" fill="none" stroke="var(--bg-secondary)" strokeWidth="16" />
+                                    <circle
+                                        cx="80" cy="80" r="70" fill="none"
+                                        stroke="var(--accent-primary)"
+                                        strokeWidth="16"
+                                        strokeDasharray={`${2 * Math.PI * 70}`}
+                                        strokeDashoffset={`${2 * Math.PI * 70 * (1 - progress / 100)}`}
+                                        strokeLinecap="round"
+                                        style={{ transition: 'stroke-dashoffset 1s ease-out' }}
+                                    />
+                                </svg>
+                                <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>{progress}%</span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div style={{ backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', padding: '1rem', display: 'flex', justifyContent: 'space-around' }}>
-                        <div style={{ textAlign: 'center' }}>
-                            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>Total</p>
-                            <p style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{total}</p>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>Done</p>
-                            <p style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--success)' }}>{completed}</p>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>Left</p>
-                            <p style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--badge-blue-text)' }}>{total - completed}</p>
+                    <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 'var(--radius-lg)' }}>
+                        <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '60%', height: '60%', background: 'var(--accent-primary)', filter: 'blur(40px)', opacity: 0.5, zIndex: 0, borderRadius: '50%' }}></div>
+                        <div style={{ position: 'absolute', bottom: '-10%', left: '-10%', width: '50%', height: '50%', background: 'rgba(16, 185, 129, 0.8)', filter: 'blur(40px)', opacity: 0.3, zIndex: 0, borderRadius: '50%' }}></div>
+
+                        <div className="card" style={{
+                            position: 'relative',
+                            zIndex: 1,
+                            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02))',
+                            backdropFilter: 'blur(16px) saturate(150%)',
+                            WebkitBackdropFilter: 'blur(16px) saturate(150%)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
+                            color: 'var(--text-primary)'
+                        }}>
+                            <h2 style={{ fontSize: '1.125rem', marginBottom: '1rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem', textShadow: '0 2px 5px rgba(0,0,0,0.5)' }}>✨ Assistant Summary</h2>
+                            <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.875rem', lineHeight: 1.6, textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
+                                You have <strong style={{ color: 'white' }}>{inProgress} active tasks</strong> currently in progress.
+                                {overdue.length > 0 ? ` Note that ${overdue.length} task(s) are overdue and require immediate attention.` : ' You are completely caught up on past-due items!'}
+                            </p>
+                            <button
+                                className="btn"
+                                onClick={handleGenerateReport}
+                                style={{
+                                    marginTop: '1.5rem',
+                                    background: 'rgba(255, 255, 255, 0.15)',
+                                    color: 'white',
+                                    width: '100%',
+                                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                                    transition: 'all 0.2s ease',
+                                    fontWeight: 600,
+                                    textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                }}
+                            >
+                                Generate Full Report
+                            </button>
                         </div>
                     </div>
                 </div>

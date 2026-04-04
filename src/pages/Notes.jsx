@@ -101,9 +101,9 @@ export default function Notes() {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 1fr) 2fr', gap: '1.5rem', flex: 1, minHeight: 0 }}>
+            <div className={`notes-container ${selectedTask ? 'task-selected' : ''}`}>
                 {/* Task Notes Sidebar */}
-                <div className="card" style={{ display: 'flex', flexDirection: 'column', padding: '1rem', overflow: 'hidden' }}>
+                <div className="card notes-sidebar" style={{ display: 'flex', flexDirection: 'column', padding: '1rem', overflow: 'hidden', flexShrink: 0, maxHeight: '40vh' }}>
                     <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <FileText size={16} /> TASK-SPECIFIC NOTES
                     </h3>
@@ -141,7 +141,7 @@ export default function Notes() {
                 </div>
 
                 {/* Main Content Area */}
-                <div className="card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                <div className="card notes-main" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative', flex: 1 }}>
                     {selectedTask ? (
                         /* Task Log Interface */
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1.5rem', overflowY: 'auto' }}>
