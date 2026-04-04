@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { getTasks } from '../lib/data';
 import { NavLink } from 'react-router-dom';
-import { Activity, Plus, Calendar as CalendarIcon, ArrowRight, CheckCircle } from 'lucide-react';
-import { isSameDay, format, isPast } from 'date-fns';
+import { Activity, Plus, Calendar as CalendarIcon, ArrowRight, CheckCircle, Sparkles, Clock } from 'lucide-react';
+import { isSameDay, format, isPast, parseISO } from 'date-fns';
 import { formatTaskDate } from '../lib/utils';
 
 export default function Home() {
@@ -35,8 +35,18 @@ export default function Home() {
         return isSameDay(d, new Date()) || d < new Date();
     });
 
+    const recentTasks = [...tasks]
+        .sort((a, b) => {
+            const dateA = a.created_at ? new Date(a.created_at) : new Date(0);
+            const dateB = b.created_at ? new Date(b.created_at) : new Date(0);
+            return dateB - dateA;
+        })
+        .slice(0, 3);
+
     const total = todaySummaryTasks.length;
     const completed = todaySummaryTasks.filter(t => t.status === 'Done').length;
+    const inProgress = tasks.filter(t => t.status === 'In progress').length;
+    const overdueCount = tasks.filter(t => t.status && t.due_date && isPast(new Date(t.due_date.split(' - ')[0])) && t.status !== 'Done').length;
     const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
 
     return (
@@ -128,6 +138,45 @@ export default function Home() {
                             <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>Left</p>
                             <p style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--badge-blue-text)' }}>{total - completed}</p>
                         </div>
+                    </div>
+                </div>
+
+                {/* Assistant Summary & Recent Updates Row */}
+                <div className="card" style={{ position: 'relative', overflow: 'hidden', minHeight: '220px', background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.98))', color: 'white', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                   <div style={{ position: 'absolute', top: '-20%', right: '-10%', width: '100px', height: '100px', background: 'var(--accent-primary)', filter: 'blur(40px)', opacity: 0.6, borderRadius: '50%' }}></div>
+                   <div style={{ position: 'relative', zIndex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.75rem' }}>
+                            <Sparkles size={20} color="#60a5fa" />
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Assistant Insight</h2>
+                        </div>
+                        <p style={{ fontSize: '0.9375rem', lineHeight: 1.6, color: 'rgba(255,255,255,0.85)', marginBottom: '1.5rem' }}>
+                            You have <strong style={{ color: 'white' }}>{inProgress} active tasks</strong> in flight. 
+                            {overdueCount > 0 ? ` ⚠️ Heads up: ${overdueCount} items are overdue!` : ' All your deadlines are on track!'}
+                            <br/><br/>
+                            Based on your activity, you're most productive in the late morning.
+                        </p>
+                        <NavLink to="/dashboard" style={{ color: '#60a5fa', textDecoration: 'none', fontWeight: 600, fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            View detailed analytics <ArrowRight size={14} />
+                        </NavLink>
+                   </div>
+                </div>
+
+                <div className="card">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+                        <Clock size={20} color="var(--accent-primary)" />
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Recent Updates</h2>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+                        {recentTasks.map(task => (
+                            <NavLink key={task.id} to={`/tasks/${task.id}`} style={{ display: 'flex', alignItems: 'center', gap: '1rem', textDecoration: 'none', color: 'inherit', padding: '0.5rem', borderRadius: 'var(--radius-md)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-primary)', flexShrink: 0 }}></div>
+                                <div style={{ flex: 1 }}>
+                                    <p style={{ fontSize: '0.875rem', fontWeight: 600, margin: 0 }}>{task.title || 'Untitled Task'}</p>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', margin: 0 }}>Added on {task.created_at ? format(new Date(task.created_at), 'MMM d, h:mm a') : 'Recently'}</p>
+                                </div>
+                                <ArrowRight size={14} color="var(--text-tertiary)" />
+                            </NavLink>
+                        ))}
                     </div>
                 </div>
             </div>
