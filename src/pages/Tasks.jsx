@@ -287,6 +287,63 @@ export default function Tasks() {
         </div>
     );
 
+    const renderCompletedView = () => {
+        const completedTasks = sortedTasks.filter(t => t.status === 'Done');
+        
+        return (
+            <div className="checklist-container">
+                <div className="page-header" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--badge-green-text)' }}></div>
+                        <h2 style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0 }}>Review Finished Tasks</h2>
+                    </div>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>{completedTasks.length} tasks ready for archive</span>
+                </div>
+
+                <div className="checklist-items">
+                    {completedTasks.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-tertiary)' }}>
+                            <div style={{ marginBottom: '1rem', opacity: 0.2 }}>
+                                <ListChecks size={48} />
+                            </div>
+                            <p>No completed tasks yet. Keep moving!</p>
+                        </div>
+                    ) : (
+                        completedTasks.map(task => (
+                            <div key={task.id} className="checklist-item done" onClick={() => navigate(`/tasks/${task.id}`)} style={{ opacity: 0.8 }}>
+                                <div className="item-checkbox-wrapper" onClick={(e) => e.stopPropagation()}>
+                                    <input
+                                        type="checkbox"
+                                        checked={true}
+                                        onChange={() => handleUpdate(task.id, 'status', 'Not started')}
+                                        className="custom-checkbox"
+                                    />
+                                </div>
+                                <div className="item-content">
+                                    <span className="item-title" style={{ textDecoration: 'line-through' }}>{task.title || 'Untitled'}</span>
+                                    <div className="item-meta">
+                                        {renderPill('status', 'Done')}
+                                        {task.priority && renderPill('priority', task.priority)}
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Log: {task.assignee || 'General'}</span>
+                                    </div>
+                                </div>
+                                <div className="item-action">
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); if (confirm('Delete this finished task permanently?')) { deleteTask(task.id); refreshTasks(); } }}
+                                        style={{ background: 'transparent', border: 'none', color: 'var(--danger)', opacity: 0.6, cursor: 'pointer' }}
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+
     const renderChecklistView = () => {
         const completedCount = tasks.filter(t => t.status === 'Done').length;
         const totalCount = tasks.length;
@@ -558,17 +615,21 @@ export default function Tasks() {
                 <div className={`tab ${activeTab === 'Checklist' ? 'active' : ''}`} onClick={() => setActiveTab('Checklist')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <ListChecks size={16} /> Checklist
                 </div>
+                <div className={`tab ${activeTab === 'Completed' ? 'active' : ''}`} onClick={() => setActiveTab('Completed')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Edit3 size={16} /> Completed
+                </div>
             </div>
 
             <div className={`tasks-layout-container ${isEditing ? 'is-editing' : ''}`} style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
                 <div className="tasks-main-content" style={{ flex: isEditing ? '0 0 60%' : 1, overflow: 'auto', paddingRight: isEditing ? '1.5rem' : 0, transition: 'all 0.3s ease' }}>
                     {isMobile ? (
-                        activeTab === 'Board' ? renderBoardView() : (activeTab === 'Checklist' ? renderChecklistView() : renderTableView())
+                        activeTab === 'Board' ? renderBoardView() : (activeTab === 'Checklist' ? renderChecklistView() : (activeTab === 'Completed' ? renderCompletedView() : renderTableView()))
                     ) : (
                         <>
                             {activeTab === 'Table' && renderTableView()}
                             {activeTab === 'Board' && renderBoardView()}
                             {activeTab === 'Checklist' && renderChecklistView()}
+                            {activeTab === 'Completed' && renderCompletedView()}
                         </>
                     )}
                 </div>
