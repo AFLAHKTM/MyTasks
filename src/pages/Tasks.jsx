@@ -19,6 +19,19 @@ export default function Tasks() {
     const [systemStatuses, setSystemStatuses] = useState([]);
     const [systemPriorities, setSystemPriorities] = useState([]);
     const [openDropdown, setOpenDropdown] = useState(null);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    useEffect(() => {
+        if (isMobile && activeTab === 'Board') {
+            setActiveTab('Checklist');
+        }
+    }, [isMobile, activeTab]);
 
     useEffect(() => {
         const handleDataSync = () => {
@@ -317,6 +330,46 @@ export default function Tasks() {
         </div>
     );
 
+    const renderMobileCards = () => (
+        <div className="mobile-task-cards">
+            {sortedTasks.map(task => (
+                <div key={task.id} className="mobile-task-card" onClick={() => navigate(`/tasks/${task.id}`)}>
+                    <div className="card-top">
+                        <div className="card-title-area">
+                            <input
+                                type="checkbox"
+                                checked={task.status === 'Done'}
+                                onClick={(e) => e.stopPropagation()}
+                                onChange={(e) => handleUpdate(task.id, 'status', e.target.checked ? 'Done' : 'Not started')}
+                                className="card-checkbox"
+                            />
+                            <span className={`card-title ${task.status === 'Done' ? 'done' : ''}`}>
+                                {task.title || 'Untitled'}
+                            </span>
+                        </div>
+                        <div className="card-assignee-small">
+                            {task.assignee && (
+                                <div className="mini-avatar">{task.assignee.charAt(0).toUpperCase()}</div>
+                            )}
+                        </div>
+                    </div>
+                    <div className="card-meta">
+                        <div className="meta-scroll">
+                            {renderGlassDropdown(task, 'status', systemStatuses)}
+                            {renderGlassDropdown(task, 'priority', systemPriorities)}
+                            <div className="meta-date">
+                                <GlassDatePicker value={task.due_date} onChange={val => handleUpdate(task.id, 'due_date', val)} placeholder="No Date" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ))}
+            <button className="mobile-add-btn" onClick={() => handleAddQuickTask()}>
+                <Plus size={18} /> Add New Task
+            </button>
+        </div>
+    );
+
     const renderBoardView = () => {
         const statuses = systemStatuses.map(s => s.name);
         return (
@@ -409,9 +462,11 @@ export default function Tasks() {
                 <div className={`tab ${activeTab === 'Table' ? 'active' : ''}`} onClick={() => setActiveTab('Table')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <LayoutList size={16} /> Table
                 </div>
-                <div className={`tab ${activeTab === 'Board' ? 'active' : ''}`} onClick={() => setActiveTab('Board')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Columns size={16} /> Kanban Board
-                </div>
+                {!isMobile && (
+                    <div className={`tab ${activeTab === 'Board' ? 'active' : ''}`} onClick={() => setActiveTab('Board')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Columns size={16} /> Kanban Board
+                    </div>
+                )}
                 <div className={`tab ${activeTab === 'Checklist' ? 'active' : ''}`} onClick={() => setActiveTab('Checklist')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <ListChecks size={16} /> Checklist
                 </div>
@@ -419,9 +474,15 @@ export default function Tasks() {
 
             <div className={`tasks-layout-container ${isEditing ? 'is-editing' : ''}`} style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
                 <div className="tasks-main-content" style={{ flex: isEditing ? '0 0 60%' : 1, overflow: 'auto', paddingRight: isEditing ? '1.5rem' : 0, transition: 'all 0.3s ease' }}>
-                    {activeTab === 'Table' && renderTableView()}
-                    {activeTab === 'Board' && renderBoardView()}
-                    {activeTab === 'Checklist' && renderChecklistView()}
+                    {isMobile ? (
+                        activeTab === 'Checklist' ? renderChecklistView() : renderMobileCards()
+                    ) : (
+                        <>
+                            {activeTab === 'Table' && renderTableView()}
+                            {activeTab === 'Board' && renderBoardView()}
+                            {activeTab === 'Checklist' && renderChecklistView()}
+                        </>
+                    )}
                 </div>
                 {isEditing && (
                     <div className="tasks-detail-sidebar" style={{ flex: '1', borderLeft: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)', overflowY: 'auto', paddingLeft: '1.5rem', marginLeft: '1.5rem' }}>
