@@ -415,7 +415,7 @@ export default function Tasks() {
                             {isCompactView ? <Maximize2 size={18} /> : <ListChecks size={18} />}
                         </button>
                     )}
-                    {!isMobile && <button className="btn btn-primary" onClick={() => handleAddQuickTask()}><Plus size={18} /> New Task</button>}
+                    <button className="btn btn-primary" onClick={() => handleAddQuickTask()}><Plus size={18} /> New Task</button>
                 </div>
             </div>
 
