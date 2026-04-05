@@ -333,7 +333,55 @@ export default function Tasks() {
         const evening = sortedTasks.filter(t => t.status !== 'Done' && getHour(t.due_date) >= 16 && getHour(t.due_date) < 24);
         const unscheduled = sortedTasks.filter(t => t.status !== 'Done' && getHour(t.due_date) === 99);
 
-        const Section = ({ title, tasks, color }) => (
+        const QuickAddRow = ({ sectionHour }) => {
+            const [val, setVal] = React.useState('');
+            const submit = () => {
+                if (!val.trim()) return;
+                const due = new Date();
+                if (sectionHour !== null) due.setHours(sectionHour, 0, 0, 0);
+                const newTask = createTask({
+                    title: val.trim(),
+                    status: 'Not started',
+                    priority: 'Medium',
+                    due_date: sectionHour !== null ? due.toISOString() : null
+                });
+                refreshTasks();
+                setVal('');
+                navigate(`/tasks/${newTask.id}`);
+            };
+            return (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem' }}>
+                    <input
+                        type="text"
+                        value={val}
+                        onChange={e => setVal(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && submit()}
+                        placeholder="Add a task..."
+                        style={{
+                            flex: 1, padding: '0.6rem 0.9rem', borderRadius: '12px',
+                            border: '1px dashed var(--border-color)',
+                            background: 'rgba(255,255,255,0.03)',
+                            color: 'var(--text-primary)', fontSize: '0.875rem',
+                            outline: 'none'
+                        }}
+                    />
+                    <button
+                        onClick={submit}
+                        style={{
+                            width: '34px', height: '34px', borderRadius: '50%',
+                            background: 'var(--accent-primary)', border: 'none',
+                            color: 'white', fontSize: '1.2rem', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            flexShrink: 0
+                        }}
+                    >
+                        <Plus size={18} />
+                    </button>
+                </div>
+            );
+        };
+
+        const Section = ({ title, tasks, color, sectionHour }) => (
             <div style={{ marginBottom: '2.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                     <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>{title}</h2>
@@ -383,14 +431,15 @@ export default function Tasks() {
                         ))
                     )}
                 </div>
+                <QuickAddRow sectionHour={sectionHour} />
             </div>
         );
         return (
             <div className="focus-view" style={{ maxWidth: '600px', margin: '0 auto', width: '100%', padding: '1rem' }}>
-                <Section title="Morning" tasks={morning} color="#fbbf24" />
-                <Section title="Midday" tasks={midday} color="#4ade80" />
-                <Section title="Evening" tasks={evening} color="#f87171" />
-                {unscheduled.length > 0 && <Section title="Later / Anytime" tasks={unscheduled} color="var(--accent-primary)" /> }
+                <Section title="Morning" tasks={morning} color="#fbbf24" sectionHour={9} />
+                <Section title="Midday" tasks={midday} color="#4ade80" sectionHour={12} />
+                <Section title="Evening" tasks={evening} color="#f87171" sectionHour={18} />
+                <Section title="Later / Anytime" tasks={unscheduled} color="var(--accent-primary)" sectionHour={null} />
             </div>
         );
     };
