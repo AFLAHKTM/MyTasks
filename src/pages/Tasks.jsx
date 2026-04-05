@@ -157,16 +157,7 @@ export default function Tasks() {
                                 <td>{renderPill('status', task.status || 'Not started')}</td>
                                 <td>{renderPill('priority', task.priority || 'Medium')}</td>
                                 <td>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <GlassDatePicker value={task.due_date} onChange={val => handleUpdate(task.id, 'due_date', val)} />
-                                        <button 
-                                            className="btn-icon" 
-                                            onClick={() => navigate(`/tasks/${task.id}`)}
-                                            style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer' }}
-                                        >
-                                            <ChevronRight size={18} />
-                                        </button>
-                                    </div>
+                                    <GlassDatePicker value={task.due_date} onChange={val => handleUpdate(task.id, 'due_date', val)} />
                                 </td>
                             </tr>
                         ))}
@@ -201,7 +192,6 @@ export default function Tasks() {
                 <div className={`board ${isMobile ? 'mobile-vertical' : ''}`}>
                     {statuses.map(status => {
                         const colTasks = sortedTasks.filter(t => (t.status || 'Not started') === status);
-                        const statusObj = systemStatuses.find(s => s.name === status);
                         return (
                             <div key={status} id={`col-${status}`} className="board-column" style={{ display: isMobile && activeBoardStatus !== status ? 'none' : 'flex' }}>
                                 <div className="board-header">
@@ -209,7 +199,6 @@ export default function Tasks() {
                                         {renderPill('status', status)}
                                         <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem' }}>{colTasks.length}</span>
                                     </span>
-                                    <Plus size={14} style={{ cursor: 'pointer' }} onClick={() => handleAddQuickTask(status)} />
                                 </div>
                                 <div className="board-cards">
                                     {colTasks.map(task => (
@@ -221,7 +210,6 @@ export default function Tasks() {
                                             </div>
                                         </div>
                                     ))}
-                                    <button className="board-add-btn" onClick={() => handleAddQuickTask(status)}><Plus size={14} /> New Task</button>
                                 </div>
                             </div>
                         );
@@ -286,12 +274,6 @@ export default function Tasks() {
                                         </div>
                                     </div>
                                 </div>
-                                <button
-                                    onClick={() => navigate(`/tasks/${task.id}`)}
-                                    style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer' }}
-                                >
-                                    <ChevronRight size={18} opacity={0.5} />
-                                </button>
                             </div>
                         ))
                     )}
@@ -313,7 +295,7 @@ export default function Tasks() {
             case 'Checklist': return renderFocusView();
             case 'Table': return renderTableView();
             case 'Board': return renderBoardView();
-            case 'Completed': return <div className="completed-view">{renderTableView()}</div>; // Fallback to list
+            case 'Completed': return <div className="completed-view">{renderTableView()}</div>;
             default: return renderFocusView();
         }
     };
@@ -322,14 +304,6 @@ export default function Tasks() {
         <div className="page-container" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <div className="page-header" style={{ marginBottom: '0.5rem' }}>
                 <div><h1 className="page-title">Tasks Directory</h1></div>
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    {!isMobile && (
-                        <button className={`btn ${isCompactView ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setIsCompactView(!isCompactView)}>
-                            {isCompactView ? <Maximize2 size={18} /> : <ListChecks size={18} />}
-                        </button>
-                    )}
-                    {!isMobile && <button className="btn btn-primary" onClick={() => handleAddQuickTask()}><Plus size={18} /> New Task</button>}
-                </div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', background: 'var(--bg-secondary)', padding: '0.75rem 1.25rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', flexWrap: 'wrap', gap: '1rem' }}>
@@ -339,7 +313,6 @@ export default function Tasks() {
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                    <button onClick={() => { if (confirm('Reschedule overdue tasks?')) { sortedTasks.forEach(t => isPast(new Date(t.due_date)) && handleUpdate(t.id, 'due_date', new Date().toISOString())); } }} style={{ background: 'transparent', border: '1px dashed var(--border-color)', color: 'var(--text-tertiary)', fontSize: '0.7rem', padding: '0.4rem 0.75rem', borderRadius: '18px' }}>RESCHEDULE ALL</button>
                     <div className="filter-toggle" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '20px', padding: '3px' }}>
                         <button onClick={() => setShowTodayOnly(true)} style={{ padding: '0.4rem 1.25rem', fontSize: '0.75rem', borderRadius: '18px', border: 'none', background: showTodayOnly ? 'var(--accent-primary)' : 'transparent', color: showTodayOnly ? 'white' : 'var(--text-tertiary)' }}>TODAY</button>
                         <button onClick={() => setShowTodayOnly(false)} style={{ padding: '0.4rem 1.25rem', fontSize: '0.75rem', borderRadius: '18px', border: 'none', background: !showTodayOnly ? 'var(--accent-primary)' : 'transparent', color: !showTodayOnly ? 'white' : 'var(--text-tertiary)' }}>ALL</button>
