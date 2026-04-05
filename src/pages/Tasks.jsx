@@ -263,7 +263,13 @@ export default function Tasks() {
                                         {renderPill('status', status, null)}
                                         <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem' }}>{colTasks.length}</span>
                                     </span>
-                                    <Plus size={14} style={{ cursor: 'pointer' }} onClick={() => handleAddQuickTask(status)} />
+                                    <button 
+                                        className="btn-icon" 
+                                        onClick={(e) => { e.stopPropagation(); handleAddQuickTask(status); }} 
+                                        style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: '4px' }}
+                                    >
+                                        <Plus size={16} />
+                                    </button>
                                 </div>
                                 <div className="board-cards">
                                     {colTasks.map(task => (
@@ -277,7 +283,13 @@ export default function Tasks() {
                                         >
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                 <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.5rem' }}>{task.title || 'Untitled'}</div>
-                                                <ChevronRight size={14} opacity={0.5} />
+                                                <button 
+                                                    className="btn-icon" 
+                                                    onClick={(e) => { e.stopPropagation(); navigate(`/tasks/${task.id}`); }}
+                                                    style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', padding: '2px' }}
+                                                >
+                                                    <ChevronRight size={16} opacity={0.5} />
+                                                </button>
                                             </div>
                                             <div style={{ display: 'flex', gap: '0.5rem', fontSize: '0.7rem' }}>
                                                 {task.priority && renderPill('priority', task.priority, task.id)}
