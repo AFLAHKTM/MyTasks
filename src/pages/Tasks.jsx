@@ -400,7 +400,7 @@ export default function Tasks() {
                         tasks.map(task => (
                             <div 
                                 key={task.id} 
-                                className=\"card\" 
+                                className="card" 
                                 onClick={() => navigate(`/tasks/${task.id}`)}
                                 style={{ 
                                     padding: isMobile ? '0.8rem' : '1.25rem', 
@@ -460,9 +460,9 @@ export default function Tasks() {
         };
 
         return (
-            <div className=\"focus-view\" style={{ maxWidth: '600px', margin: '0 auto', width: '100%', padding: isMobile ? '0.5rem' : '1rem' }}>
+            <div className="focus-view" style={{ maxWidth: '600px', margin: '0 auto', width: '100%', padding: isMobile ? '0.5rem' : '1rem' }}>
                 {isMobile && (
-                    <div className=\"section-nav\" style={{ 
+                    <div className="section-nav" style={{ 
                         display: 'flex', 
                         gap: '0.5rem', 
                         overflowX: 'auto', 
@@ -497,10 +497,10 @@ export default function Tasks() {
                         ))}
                     </div>
                 )}
-                <Section id=\"sec-morning\" title=\"Morning\" tasks={morning} color=\"#fbbf24\" sectionHour={9} />
-                <Section id=\"sec-midday\" title=\"Midday\" tasks={midday} color=\"#4ade80\" sectionHour={12} />
-                <Section id=\"sec-evening\" title=\"Evening\" tasks={evening} color=\"#f87171\" sectionHour={18} />
-                <Section id=\"sec-later\" title=\"Later / Anytime\" tasks={unscheduled} color=\"#6366f1\" sectionHour={null} />
+                <Section id="sec-morning" title="Morning" tasks={morning} color="#fbbf24" sectionHour={9} />
+                <Section id="sec-midday" title="Midday" tasks={midday} color="#4ade80" sectionHour={12} />
+                <Section id="sec-evening" title="Evening" tasks={evening} color="#f87171" sectionHour={18} />
+                <Section id="sec-later" title="Later / Anytime" tasks={unscheduled} color="#6366f1" sectionHour={null} />
             </div>
         );
     };
