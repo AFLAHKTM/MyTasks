@@ -121,6 +121,7 @@ const syncFromSupabase = async () => {
         notes: t.notes || [],
         recurring_days: t.recurring_days || [],
         every_day: !!t.every_day,
+        checklist_only: !!t.checklist_only,
         created_at: t.created_at || new Date().toISOString()
       })));
     } else {
@@ -244,6 +245,7 @@ export const initDB = async () => {
         notes: t.notes || [],
         recurring_days: t.recurring_days || [],
         every_day: !!t.every_day,
+        checklist_only: !!t.checklist_only,
         created_at: t.created_at || new Date().toISOString()
       })));
       
@@ -337,7 +339,10 @@ export const createTask = (taskData) => {
   dispatchDataUpdate();
 
   // Save to Supabase (background)
-  supabase.from('tasks').insert([newTask]).then(({ error }) => {
+  supabase.from('tasks').insert([{
+    ...newTask,
+    checklist_only: !!newTask.checklist_only
+  }]).then(({ error }) => {
     if (error) console.error('Supabase Task Insert Error:', error);
   });
 
