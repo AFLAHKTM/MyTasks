@@ -118,7 +118,7 @@ export default function Tasks() {
                 </thead>
                 <tbody>
                     {sortedTasks.map(task => (
-                        <tr key={task.id} onClick={() => navigate(`/tasks/${task.id}`)} className={task.status === 'Done' ? 'dimmed' : ''}>
+                        <tr key={task.id} className={task.status === 'Done' ? 'dimmed' : ''}>
                             <td>
                                 <input type="checkbox" checked={task.status === 'Done'} onChange={(e) => { e.stopPropagation(); handleUpdate(task.id, 'status', e.target.checked ? 'Done' : 'Not started'); }} />
                             </td>
@@ -129,8 +129,15 @@ export default function Tasks() {
                             {!isMobile && <td>{renderPill('status', task.status || 'Not started')}</td>}
                             {!isMobile && <td>{renderPill('priority', task.priority || 'Medium')}</td>}
                             <td>
-                                <div onClick={(e) => e.stopPropagation()}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                     <GlassDatePicker value={task.due_date} onChange={val => handleUpdate(task.id, 'due_date', val)} />
+                                    <button 
+                                        className="btn-icon" 
+                                        onClick={() => navigate(`/tasks/${task.id}`)}
+                                        style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer' }}
+                                    >
+                                        <ChevronRight size={18} />
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -220,20 +227,45 @@ export default function Tasks() {
                         <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', fontStyle: 'italic', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>Clear for now!</p>
                     ) : (
                         tasks.map(task => (
-                            <div key={task.id} className="card" onClick={() => navigate(`/tasks/${task.id}`)} style={{ padding: '1.25rem', borderLeft: `6px solid ${color}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-secondary)', borderRadius: '16px', cursor: 'pointer' }}>
+                            <div 
+                                key={task.id} 
+                                className="card" 
+                                style={{ 
+                                    padding: '1.25rem', 
+                                    borderLeft: `6px solid ${color}`,
+                                    display: 'flex', 
+                                    justifyContent: 'space-between', 
+                                    alignItems: 'center',
+                                    background: 'var(--bg-secondary)',
+                                    borderRadius: '16px'
+                                }}
+                            >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', border: `2px solid ${task.status === 'Done' ? color : 'var(--border-color)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <div 
+                                        style={{ 
+                                            width: '24px', height: '24px', borderRadius: '50%', 
+                                            border: `2px solid ${task.status === 'Done' ? color : 'var(--border-color)'}`, 
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            cursor: 'pointer'
+                                        }}
+                                        onClick={(e) => { e.stopPropagation(); handleUpdate(task.id, 'status', task.status === 'Done' ? 'Not started' : 'Done'); }}
+                                    >
                                         {task.status === 'Done' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: color }}></div>}
                                     </div>
                                     <div>
-                                        <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)' }}>{task.title || 'Untitled Task'}</h3>
+                                        <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.2rem' }}>{task.title || 'Untitled Task'}</h3>
                                         <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
                                             <span>⏰ {task.due_date ? format(new Date(task.due_date), 'hh:mm a') : 'Anytime'}</span>
                                             {task.priority && <span style={{ color: `var(--${systemPriorities.find(p => p.name === task.priority)?.color || 'gray'}-text)` }}>• {task.priority}</span>}
                                         </div>
                                     </div>
                                 </div>
-                                <ArrowRight size={18} color="var(--text-tertiary)" opacity={0.5} />
+                                <button
+                                    onClick={() => navigate(`/tasks/${task.id}`)}
+                                    style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer' }}
+                                >
+                                    <ChevronRight size={18} opacity={0.5} />
+                                </button>
                             </div>
                         ))
                     )}
