@@ -98,6 +98,26 @@ export default function Tasks() {
         });
     }, [tasks, searchQuery, showTodayOnly]);
 
+    const onCardDragStart = (e, id) => {
+        setDraggingCardId(id);
+        e.dataTransfer.setData('taskId', id);
+    };
+
+    const handleCardDragOver = (e, status) => {
+        e.preventDefault();
+        setDragOverStatus(status);
+    };
+
+    const handleColumnDrop = (e, status) => {
+        e.preventDefault();
+        const id = e.dataTransfer.getData('taskId') || draggingCardId;
+        if (id) {
+            handleUpdate(id, 'status', status);
+        }
+        setDraggingCardId(null);
+        setDragOverStatus(null);
+    };
+
     const renderPill = (type, value) => {
         const list = type === 'status' ? systemStatuses : systemPriorities;
         const matched = list.find(l => l.name === value) || { color: 'badge-gray' };
@@ -157,7 +177,16 @@ export default function Tasks() {
                                 <td>{renderPill('status', task.status || 'Not started')}</td>
                                 <td>{renderPill('priority', task.priority || 'Medium')}</td>
                                 <td>
-                                    <GlassDatePicker value={task.due_date} onChange={val => handleUpdate(task.id, 'due_date', val)} />
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <GlassDatePicker value={task.due_date} onChange={val => handleUpdate(task.id, 'due_date', val)} />
+                                        <button 
+                                            className="btn-icon" 
+                                            onClick={() => navigate(`/tasks/${task.id}`)}
+                                            style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer' }}
+                                        >
+                                            <ChevronRight size={18} />
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}
@@ -193,23 +222,48 @@ export default function Tasks() {
                     {statuses.map(status => {
                         const colTasks = sortedTasks.filter(t => (t.status || 'Not started') === status);
                         return (
-                            <div key={status} id={`col-${status}`} className="board-column" style={{ display: isMobile && activeBoardStatus !== status ? 'none' : 'flex' }}>
+                            <div 
+                                key={status} 
+                                id={`col-${status}`} 
+                                className={`board-column ${dragOverStatus === status ? 'drag-over' : ''}`} 
+                                onDragOver={(e) => handleCardDragOver(e, status)}
+                                onDragLeave={() => setDragOverStatus(null)}
+                                onDrop={(e) => handleColumnDrop(e, status)}
+                                style={{ display: isMobile && activeBoardStatus !== status ? 'none' : 'flex' }}
+                            >
                                 <div className="board-header">
                                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         {renderPill('status', status)}
                                         <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem' }}>{colTasks.length}</span>
                                     </span>
+                                    <Plus size={14} style={{ cursor: 'pointer' }} onClick={() => handleAddQuickTask(status)} />
                                 </div>
                                 <div className="board-cards">
                                     {colTasks.map(task => (
-                                        <div key={task.id} className="task-card" style={{ cursor: 'default' }}>
-                                            <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.5rem' }}>{task.title || 'Untitled'}</div>
+                                        <div 
+                                            key={task.id} 
+                                            className="task-card" 
+                                            draggable 
+                                            onDragStart={(e) => onCardDragStart(e, task.id)}
+                                            style={{ cursor: 'grab' }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.5rem' }}>{task.title || 'Untitled'}</div>
+                                                <button 
+                                                    className="btn-icon" 
+                                                    onClick={() => navigate(`/tasks/${task.id}`)}
+                                                    style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', padding: 0 }}
+                                                >
+                                                    <ChevronRight size={14} />
+                                                </button>
+                                            </div>
                                             <div style={{ display: 'flex', gap: '0.5rem', fontSize: '0.7rem' }}>
                                                 {task.priority && renderPill('priority', task.priority)}
                                                 {task.due_date && <span style={{ color: 'var(--text-tertiary)' }}>{formatTaskDate(task.due_date)}</span>}
                                             </div>
                                         </div>
                                     ))}
+                                    <button className="board-add-btn" onClick={() => handleAddQuickTask(status)}><Plus size={14} /> New Task</button>
                                 </div>
                             </div>
                         );
@@ -266,7 +320,7 @@ export default function Tasks() {
                                     >
                                         {task.status === 'Done' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: color }}></div>}
                                     </div>
-                                    <div>
+                                    <div style={{ cursor: 'pointer' }} onClick={() => navigate(`/tasks/${task.id}`)}>
                                         <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.2rem' }}>{task.title || 'Untitled Task'}</h3>
                                         <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
                                             <span>⏰ {task.due_date ? format(new Date(task.due_date), 'hh:mm a') : 'Anytime'}</span>
@@ -274,6 +328,9 @@ export default function Tasks() {
                                         </div>
                                     </div>
                                 </div>
+                                <button className="btn-icon" onClick={() => navigate(`/tasks/${task.id}`)} style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)' }}>
+                                    <ChevronRight size={18} />
+                                </button>
                             </div>
                         ))
                     )}
@@ -304,6 +361,14 @@ export default function Tasks() {
         <div className="page-container" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <div className="page-header" style={{ marginBottom: '0.5rem' }}>
                 <div><h1 className="page-title">Tasks Directory</h1></div>
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    {!isMobile && (
+                        <button className={`btn ${isCompactView ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setIsCompactView(!isCompactView)}>
+                            {isCompactView ? <Maximize2 size={18} /> : <ListChecks size={18} />}
+                        </button>
+                    )}
+                    {!isMobile && <button className="btn btn-primary" onClick={() => handleAddQuickTask()}><Plus size={18} /> New Task</button>}
+                </div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', background: 'var(--bg-secondary)', padding: '0.75rem 1.25rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', flexWrap: 'wrap', gap: '1rem' }}>
@@ -313,6 +378,7 @@ export default function Tasks() {
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <button onClick={() => { if (confirm('Reschedule overdue tasks?')) { sortedTasks.forEach(t => isPast(new Date(t.due_date)) && handleUpdate(t.id, 'due_date', new Date().toISOString())); } }} style={{ background: 'transparent', border: '1px dashed var(--border-color)', color: 'var(--text-tertiary)', fontSize: '0.7rem', padding: '0.4rem 0.75rem', borderRadius: '18px' }}>RESCHEDULE ALL</button>
                     <div className="filter-toggle" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '20px', padding: '3px' }}>
                         <button onClick={() => setShowTodayOnly(true)} style={{ padding: '0.4rem 1.25rem', fontSize: '0.75rem', borderRadius: '18px', border: 'none', background: showTodayOnly ? 'var(--accent-primary)' : 'transparent', color: showTodayOnly ? 'white' : 'var(--text-tertiary)' }}>TODAY</button>
                         <button onClick={() => setShowTodayOnly(false)} style={{ padding: '0.4rem 1.25rem', fontSize: '0.75rem', borderRadius: '18px', border: 'none', background: !showTodayOnly ? 'var(--accent-primary)' : 'transparent', color: !showTodayOnly ? 'white' : 'var(--text-tertiary)' }}>ALL</button>
