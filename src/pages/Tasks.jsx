@@ -339,7 +339,7 @@ export default function Tasks() {
                 if (!val.trim()) return;
                 const due = new Date();
                 if (sectionHour !== null) due.setHours(sectionHour, 0, 0, 0);
-                const newTask = createTask({
+                createTask({
                     title: val.trim(),
                     status: 'Not started',
                     priority: 'Medium',
@@ -347,7 +347,6 @@ export default function Tasks() {
                 });
                 refreshTasks();
                 setVal('');
-                navigate(`/tasks/${newTask.id}`);
             };
             return (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem' }}>
