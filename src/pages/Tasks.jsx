@@ -82,11 +82,14 @@ export default function Tasks() {
             filtered = filtered.filter(t => t.title?.toLowerCase().includes(searchQuery.toLowerCase()));
         }
         if (showTodayOnly) {
-            const today = new Date().getDay();
+            const todayDay = new Date().getDay();
             filtered = filtered.filter(t => {
-                if (t.recurring_days && (t.recurring_days.includes(today) || t.every_day)) return true;
-                if (!t.due_date) return false;
-                return isToday(new Date(t.due_date.split(' - ')[0])) || isPast(new Date(t.due_date.split(' - ')[0]));
+                // Always show recurring tasks scheduled for today
+                if (t.recurring_days && (t.recurring_days.includes(todayDay) || t.every_day)) return true;
+                // Show tasks with no due date (unscheduled / anytime)
+                if (!t.due_date) return true;
+                // Show tasks due exactly today
+                return isToday(new Date(t.due_date.split(' - ')[0]));
             });
         }
         return filtered.sort((a, b) => {
