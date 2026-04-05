@@ -406,7 +406,7 @@ export default function Tasks() {
 
     return (
         <div className="page-container" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div className="page-header" style={{ marginBottom: '0.5rem' }}>
+            <div className="page-header" style={{ marginBottom: '0.5rem', display: (isMobile && isEditing) ? 'none' : 'flex' }}>
                 <div><h1 className="page-title">Tasks Directory</h1></div>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
                     {!isMobile && (
@@ -418,7 +418,7 @@ export default function Tasks() {
                 </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', background: 'var(--bg-secondary)', padding: '0.75rem 1.25rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', flexWrap: 'wrap', gap: '1rem' }}>
+            <div style={{ display: (isMobile && isEditing) ? 'none' : 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', background: 'var(--bg-secondary)', padding: '0.75rem 1.25rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', flexWrap: 'wrap', gap: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
                         <Calendar size={16} /><span style={{ fontWeight: 600, fontSize: '0.875rem' }}>TODAY IS {format(new Date(), 'EEEE').toUpperCase()}</span>
@@ -433,7 +433,7 @@ export default function Tasks() {
                 </div>
             </div>
 
-            <div className="tabs" style={{ margin: '1rem 0', padding: '4px', background: 'var(--bg-secondary)', borderRadius: '30px', border: '1px solid var(--border-color)', display: 'inline-flex', alignSelf: 'center', width: isMobile ? 'auto' : 'fit-content' }}>
+            <div className="tabs" style={{ margin: '1rem 0', padding: '4px', background: 'var(--bg-secondary)', borderRadius: '30px', border: '1px solid var(--border-color)', display: (isMobile && isEditing) ? 'none' : 'inline-flex', alignSelf: 'center', width: isMobile ? 'auto' : 'fit-content' }}>
                 {['Checklist', 'Table', 'Board', 'Completed'].map(tab => (
                     <div key={tab} className={`tab ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)} style={{ padding: isMobile ? '0.6rem 1.25rem' : '0.6rem 1.5rem', borderRadius: '25px', display: 'flex', alignItems: 'center', gap: '0.6rem', transition: 'all 0.3s ease' }}>
                         {tab === 'Checklist' && <ListChecks size={isMobile ? 20 : 16} />}
