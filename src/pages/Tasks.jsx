@@ -94,6 +94,10 @@ export default function Tasks() {
                 return isToday(new Date(t.due_date.split(' - ')[0]));
             });
         }
+        // Board/Table: hide checklist-only tasks (those added via Checklist quick-add)
+        if (activeTab === 'Table' || activeTab === 'Board') {
+            filtered = filtered.filter(t => !t.checklist_only);
+        }
         // Board view: show all tasks including Done (in their column)
         // Checklist & Table: hide Done tasks (use Completed tab for those)
         // Completed tab: show only Done tasks
@@ -343,7 +347,8 @@ export default function Tasks() {
                     title: val.trim(),
                     status: 'Not started',
                     priority: 'Medium',
-                    due_date: sectionHour !== null ? due.toISOString() : null
+                    due_date: sectionHour !== null ? due.toISOString() : null,
+                    checklist_only: true
                 });
                 refreshTasks();
                 setVal('');
