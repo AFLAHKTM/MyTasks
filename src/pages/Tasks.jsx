@@ -201,17 +201,32 @@ export default function Tasks() {
         return (
             <div className="board-view-wrapper">
                 {isMobile && (
-                    <div className="mobile-status-selector" style={{ padding: '4px', background: 'var(--bg-secondary)', borderRadius: '35px', border: '1px solid var(--border-color)', marginBottom: '1.5rem' }}>
+                    <div className="mobile-status-selector" style={{ padding: '4px', background: 'var(--bg-secondary)', borderRadius: '35px', border: '1px solid var(--border-color)', marginBottom: '1.5rem', display: 'flex' }}>
                         {systemStatuses.map(s => (
                             <div 
                                 key={s.name} 
-                                className={`mobile-status-pill-item ${activeBoardStatus === s.name ? 'active' : ''}`}
+                                className={`mobile-status-pill-item ${activeBoardStatus === s.name ? 'active' : ''} ${dragOverStatus === s.name ? 'drag-over' : ''}`}
                                 onClick={() => {
                                     setActiveBoardStatus(s.name);
                                     const el = document.getElementById(`col-${s.name}`);
                                     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                                 }}
-                                style={{ flex: 1, textAlign: 'center', padding: '0.6rem 0.5rem', borderRadius: '30px', fontSize: '0.7rem', fontWeight: 800, transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', backgroundColor: activeBoardStatus === s.name ? `var(--${s.color}-text)` : 'transparent', color: activeBoardStatus === s.name ? 'white' : 'var(--text-tertiary)', boxShadow: activeBoardStatus === s.name ? `0 4px 15px var(--${s.color}-text)` : 'none' }}
+                                onDragOver={(e) => handleCardDragOver(e, s.name)}
+                                onDragLeave={() => setDragOverStatus(null)}
+                                onDrop={(e) => handleColumnDrop(e, s.name)}
+                                style={{ 
+                                    flex: 1, 
+                                    textAlign: 'center', 
+                                    padding: '0.6rem 0.5rem', 
+                                    borderRadius: '30px', 
+                                    fontSize: '0.7rem', 
+                                    fontWeight: 800, 
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
+                                    backgroundColor: activeBoardStatus === s.name ? `var(--${s.color}-text)` : (dragOverStatus === s.name ? 'rgba(255,255,255,0.1)' : 'transparent'), 
+                                    color: activeBoardStatus === s.name ? 'white' : 'var(--text-tertiary)', 
+                                    boxShadow: activeBoardStatus === s.name ? `0 4px 15px var(--${s.color}-text)` : 'none',
+                                    border: dragOverStatus === s.name ? '1px dashed var(--accent-primary)' : '1px solid transparent'
+                                }}
                             >
                                 {s.name}
                             </div>
