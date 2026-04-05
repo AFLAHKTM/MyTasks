@@ -387,71 +387,120 @@ export default function Tasks() {
             );
         };
 
-        const Section = ({ title, tasks, color, sectionHour }) => (
-            <div style={{ marginBottom: '2.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>{title}</h2>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>{tasks.length} items</span>
+        const Section = ({ title, id, tasks, color, sectionHour }) => (
+            <div id={id} style={{ marginBottom: isMobile ? '1.5rem' : '2.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobile ? '0.5rem' : '1rem' }}>
+                    <h2 style={{ fontSize: isMobile ? '1.1rem' : '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>{title}</h2>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{tasks.length} items</span>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '0.5rem' : '1rem' }}>
                     {tasks.length === 0 ? (
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', fontStyle: 'italic', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>Clear for now!</p>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', fontStyle: 'italic', padding: '0.75rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>Clear for now!</p>
                     ) : (
                         tasks.map(task => (
                             <div 
                                 key={task.id} 
-                                className="card" 
+                                className=\"card\" 
                                 onClick={() => navigate(`/tasks/${task.id}`)}
                                 style={{ 
-                                    padding: '1.25rem', 
-                                    borderLeft: `6px solid ${color}`,
+                                    padding: isMobile ? '0.8rem' : '1.25rem', 
+                                    borderLeft: `${isMobile ? '4px' : '6px'} solid ${color}`,
                                     display: 'flex', 
                                     justifyContent: 'space-between', 
                                     alignItems: 'center',
                                     background: 'var(--bg-secondary)',
-                                    borderRadius: '16px',
+                                    borderRadius: isMobile ? '12px' : '16px',
                                     cursor: 'pointer'
                                 }}
                             >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.75rem' : '1.25rem' }}>
                                     <div 
                                         style={{ 
-                                            width: '24px', height: '24px', borderRadius: '50%', 
+                                            width: isMobile ? '20px' : '24px', height: isMobile ? '20px' : '24px', borderRadius: '50%', 
                                             border: `2px solid ${task.status === 'Done' ? color : 'var(--border-color)'}`, 
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            flexShrink: 0
                                         }}
                                         onClick={(e) => { e.stopPropagation(); handleUpdate(task.id, 'status', task.status === 'Done' ? 'Not started' : 'Done'); }}
                                     >
-                                        {task.status === 'Done' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: color }}></div>}
+                                        {task.status === 'Done' && <div style={{ width: isMobile ? '10px' : '12px', height: isMobile ? '10px' : '12px', borderRadius: '50%', background: color }}></div>}
                                     </div>
-                                    <div style={{ opacity: task.status === 'Done' ? 0.6 : 1 }}>
+                                    <div style={{ opacity: task.status === 'Done' ? 0.6 : 1, overflow: 'hidden' }}>
                                         <h3 style={{ 
-                                            fontSize: '1.05rem', 
+                                            fontSize: isMobile ? '0.95rem' : '1.05rem', 
                                             fontWeight: 600, 
                                             color: 'var(--text-primary)', 
-                                            marginBottom: '0.2rem',
-                                            textDecoration: task.status === 'Done' ? 'line-through' : 'none'
+                                            marginBottom: '0.1rem',
+                                            textDecoration: task.status === 'Done' ? 'line-through' : 'none',
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            maxWidth: isMobile ? '200px' : 'none'
                                         }}>{task.title || 'Untitled Task'}</h3>
-                                        <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                                            <span>⏰ {task.due_date ? format(new Date(task.due_date), 'hh:mm a') : 'Anytime'}</span>
+                                        <div style={{ display: 'flex', gap: '0.6rem', fontSize: '0.7rem', color: 'var(--text-tertiary)', alignItems: 'center' }}>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}><Clock size={12} /> {task.due_date ? format(new Date(task.due_date), 'hh:mm a') : 'Anytime'}</span>
                                             {task.priority && renderPill('priority', task.priority, task.id)}
                                         </div>
                                     </div>
                                 </div>
-                                <ChevronRight size={18} opacity={0.5} />
+                                <ChevronRight size={16} opacity={0.5} />
                             </div>
                         ))
                     )}
                 </div>
-                <QuickAddRow sectionHour={sectionHour} />
+                {!isMobile && <QuickAddRow sectionHour={sectionHour} />}
             </div>
         );
+
+        const scrollToSection = (id) => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        };
+
         return (
-            <div className="focus-view" style={{ maxWidth: '600px', margin: '0 auto', width: '100%', padding: '1rem' }}>
-                <Section title="Morning" tasks={morning} color="#fbbf24" sectionHour={9} />
-                <Section title="Midday" tasks={midday} color="#4ade80" sectionHour={12} />
-                <Section title="Evening" tasks={evening} color="#f87171" sectionHour={18} />
-                <Section title="Later / Anytime" tasks={unscheduled} color="var(--accent-primary)" sectionHour={null} />
+            <div className=\"focus-view\" style={{ maxWidth: '600px', margin: '0 auto', width: '100%', padding: isMobile ? '0.5rem' : '1rem' }}>
+                {isMobile && (
+                    <div className=\"section-nav\" style={{ 
+                        display: 'flex', 
+                        gap: '0.5rem', 
+                        overflowX: 'auto', 
+                        paddingBottom: '1rem', 
+                        marginBottom: '0.5rem',
+                        scrollbarWidth: 'none',
+                        msOverflowStyle: 'none',
+                        WebkitOverflowScrolling: 'touch'
+                    }}>
+                        {[
+                            { name: 'Morning', id: 'sec-morning', color: '#fbbf24' },
+                            { name: 'Midday', id: 'sec-midday', color: '#4ade80' },
+                            { name: 'Evening', id: 'sec-evening', color: '#f87171' },
+                            { name: 'Later', id: 'sec-later', color: '#6366f1' }
+                        ].map(s => (
+                            <button 
+                                key={s.id}
+                                onClick={() => scrollToSection(s.id)}
+                                style={{ 
+                                    padding: '0.4rem 1rem', 
+                                    borderRadius: '20px', 
+                                    border: `1px solid ${s.color}44`,
+                                    background: `${s.color}11`,
+                                    color: s.color,
+                                    fontSize: '0.75rem',
+                                    fontWeight: 600,
+                                    whiteSpace: 'nowrap'
+                                }}
+                            >
+                                {s.name}
+                            </button>
+                        ))}
+                    </div>
+                )}
+                <Section id=\"sec-morning\" title=\"Morning\" tasks={morning} color=\"#fbbf24\" sectionHour={9} />
+                <Section id=\"sec-midday\" title=\"Midday\" tasks={midday} color=\"#4ade80\" sectionHour={12} />
+                <Section id=\"sec-evening\" title=\"Evening\" tasks={evening} color=\"#f87171\" sectionHour={18} />
+                <Section id=\"sec-later\" title=\"Later / Anytime\" tasks={unscheduled} color=\"#6366f1\" sectionHour={null} />
             </div>
         );
     };
@@ -468,29 +517,44 @@ export default function Tasks() {
 
     return (
         <div className="page-container" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div className="page-header" style={{ marginBottom: '0.5rem', display: (isMobile && isEditing) ? 'none' : 'flex' }}>
-                <div><h1 className="page-title">Checklist</h1></div>
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    {!isMobile && (
+            <div className=\"page-header\" style={{ 
+                marginBottom: isMobile ? '0.2rem' : '0.5rem', 
+                display: (isMobile && isEditing) ? 'none' : 'flex',
+                flexDirection: isMobile ? 'column' : 'row',
+                alignItems: isMobile ? 'flex-start' : 'center',
+                gap: '0.25rem'
+            }}>
+                <h1 className=\"page-title\" style={{ fontSize: isMobile ? '1.5rem' : '1.875rem' }}>Checklist</h1>
+                {!isMobile && (
+                    <div style={{ display: 'flex', gap: '0.75rem' }}>
                         <button className={`btn ${isCompactView ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setIsCompactView(!isCompactView)}>
                             {isCompactView ? <Maximize2 size={18} /> : <ListChecks size={18} />}
                         </button>
-                    )}
-                    <button className="btn btn-primary" onClick={() => handleAddQuickTask()}><Plus size={18} /> New Task</button>
-                </div>
+                        <button className="btn btn-primary" onClick={() => handleAddQuickTask()}><Plus size={18} /> New Task</button>
+                    </div>
+                )}
             </div>
 
-            <div style={{ display: (isMobile && isEditing) ? 'none' : 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', background: 'var(--bg-secondary)', padding: '0.75rem 1.25rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', flexWrap: 'wrap', gap: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
-                        <Calendar size={16} /><span style={{ fontWeight: 600, fontSize: '0.875rem' }}>TODAY IS {format(new Date(), 'EEEE').toUpperCase()}</span>
-                    </div>
+            <div style={{ 
+                display: (isMobile && isEditing) ? 'none' : 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between', 
+                marginBottom: isMobile ? '0.75rem' : '1.5rem', 
+                background: 'var(--bg-secondary)', 
+                padding: isMobile ? '0.5rem 0.75rem' : '0.75rem 1.25rem', 
+                borderRadius: isMobile ? '16px' : 'var(--radius-lg)', 
+                border: '1px solid var(--border-color)', 
+                flexWrap: 'wrap', 
+                gap: '0.5rem' 
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: isMobile ? '0.65rem' : '0.875rem' }}>
+                    <Calendar size={14} /><span style={{ fontWeight: 600 }}>{isMobile ? format(new Date(), 'EEEE, MMM d').toUpperCase() : `TODAY IS ${format(new Date(), 'EEEE').toUpperCase()}`}</span>
                 </div>
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                    <button onClick={() => { if (confirm('Reschedule overdue tasks?')) { sortedTasks.forEach(t => isPast(new Date(t.due_date)) && handleUpdate(t.id, 'due_date', new Date().toISOString())); } }} style={{ background: 'transparent', border: '1px dashed var(--border-color)', color: 'var(--text-tertiary)', fontSize: '0.7rem', padding: '0.4rem 0.75rem', borderRadius: '18px' }}>RESCHEDULE ALL</button>
-                    <div className="filter-toggle" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '20px', padding: '3px' }}>
-                        <button onClick={() => setShowTodayOnly(true)} style={{ padding: '0.4rem 1.25rem', fontSize: '0.75rem', borderRadius: '18px', border: 'none', background: showTodayOnly ? 'var(--accent-primary)' : 'transparent', color: showTodayOnly ? 'white' : 'var(--text-tertiary)' }}>TODAY</button>
-                        <button onClick={() => setShowTodayOnly(false)} style={{ padding: '0.4rem 1.25rem', fontSize: '0.75rem', borderRadius: '18px', border: 'none', background: !showTodayOnly ? 'var(--accent-primary)' : 'transparent', color: !showTodayOnly ? 'white' : 'var(--text-tertiary)' }}>ALL</button>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    {!isMobile && <button onClick={() => { if (confirm('Reschedule overdue tasks?')) { sortedTasks.forEach(t => isPast(new Date(t.due_date)) && handleUpdate(t.id, 'due_date', new Date().toISOString())); } }} style={{ background: 'transparent', border: '1px dashed var(--border-color)', color: 'var(--text-tertiary)', fontSize: '0.7rem', padding: '0.4rem 0.75rem', borderRadius: '18px' }}>RESCHEDULE ALL</button>}
+                    <div className="filter-toggle" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '20px', padding: '2px' }}>
+                        <button onClick={() => setShowTodayOnly(true)} style={{ padding: isMobile ? '0.3rem 0.8rem' : '0.4rem 1.25rem', fontSize: '0.7rem', borderRadius: '18px', border: 'none', background: showTodayOnly ? 'var(--accent-primary)' : 'transparent', color: showTodayOnly ? 'white' : 'var(--text-tertiary)' }}>TODAY</button>
+                        <button onClick={() => setShowTodayOnly(false)} style={{ padding: isMobile ? '0.3rem 0.8rem' : '0.4rem 1.25rem', fontSize: '0.7rem', borderRadius: '18px', border: 'none', background: !showTodayOnly ? 'var(--accent-primary)' : 'transparent', color: !showTodayOnly ? 'white' : 'var(--text-tertiary)' }}>ALL</button>
                     </div>
                 </div>
             </div>
