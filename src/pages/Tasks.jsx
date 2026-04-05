@@ -428,11 +428,39 @@ export default function Tasks() {
                 ))}
             </div>
 
-            <div className={`tasks-layout-container ${isEditing ? 'is-editing' : ''}`} style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
-                <div className="tasks-main-content" style={{ flex: isEditing ? '0 0 60%' : 1, overflow: 'auto', transition: 'all 0.3s ease' }}>
+            <div className={`tasks-layout-container ${isEditing ? 'is-editing' : ''}`} style={{ flex: 1, overflow: 'hidden', display: 'flex', height: '100%', position: 'relative' }}>
+                <div 
+                    className="tasks-main-content" 
+                    style={{ 
+                        flex: isEditing ? (isMobile ? '0' : '0 0 60%') : 1, 
+                        overflow: 'auto', 
+                        transition: 'all 0.3s ease',
+                        display: (isMobile && isEditing) ? 'none' : 'block'
+                    }}
+                >
                     {renderView()}
                 </div>
-                {isEditing && <div className="tasks-detail-sidebar" style={{ flex: '1', borderLeft: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)', overflowY: 'auto', padding: '1.5rem' }}><Outlet /></div>}
+                {isEditing && (
+                    <div 
+                        className="tasks-detail-sidebar" 
+                        style={{ 
+                            flex: '1', 
+                            borderLeft: isMobile ? 'none' : '1px solid var(--border-color)', 
+                            backgroundColor: 'var(--bg-primary)', 
+                            overflowY: 'auto', 
+                            padding: isMobile ? '1rem' : '1.5rem',
+                            position: isMobile ? 'absolute' : 'relative',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            zIndex: 100,
+                            height: '100%'
+                        }}
+                    >
+                        <Outlet />
+                    </div>
+                )}
             </div>
         </div>
     );
