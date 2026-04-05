@@ -92,14 +92,26 @@ export default function Tasks() {
                 return isToday(new Date(t.due_date.split(' - ')[0]));
             });
         }
+        // Hide completed tasks from all tabs except the Completed tab
+        if (activeTab !== 'Completed') {
+            filtered = filtered.filter(t => t.status !== 'Done');
+        } else {
+            // In Completed tab, show only Done tasks
+            filtered = filtered.filter(t => t.status === 'Done');
+        }
         return filtered.sort((a, b) => {
+            if (activeTab === 'Completed') {
+                const dateA = a.due_date ? new Date(a.due_date) : new Date(0);
+                const dateB = b.due_date ? new Date(b.due_date) : new Date(0);
+                return dateB - dateA; // newest first for completed
+            }
             if (a.status === 'Done' && b.status !== 'Done') return 1;
             if (a.status !== 'Done' && b.status === 'Done') return -1;
             const dateA = a.due_date ? new Date(a.due_date) : new Date(0);
             const dateB = b.due_date ? new Date(b.due_date) : new Date(0);
             return dateA - dateB;
         });
-    }, [tasks, searchQuery, showTodayOnly]);
+    }, [tasks, searchQuery, showTodayOnly, activeTab]);
 
     const onCardDragStart = (e, id) => {
         setDraggingCardId(id);
