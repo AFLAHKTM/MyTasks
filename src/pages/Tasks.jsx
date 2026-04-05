@@ -638,15 +638,26 @@ export default function Tasks() {
                 </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', background: 'var(--bg-secondary)', padding: '0.75rem 1.25rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between', 
+                marginBottom: '1.5rem', 
+                background: 'var(--bg-secondary)', 
+                padding: '0.75rem 1.25rem', 
+                borderRadius: 'var(--radius-lg)', 
+                border: '1px solid var(--border-color)',
+                flexWrap: 'wrap',
+                gap: '1rem'
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
                         <Calendar size={16} />
                         <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>TODAY IS {currentDayName}</span>
                     </div>
-                    <div className="divider-v" style={{ height: '16px', width: '1px', backgroundColor: 'var(--border-color)' }}></div>
+                    {!isMobile && <div className="divider-v" style={{ height: '16px', width: '1px', backgroundColor: 'var(--border-color)' }}></div>}
                     <span style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>
-                        {showTodayOnly ? `Showing ${sortedTasks.length} Scheduled Tasks` : `Showing Full Backlog (${tasks.length} total)`}
+                        {showTodayOnly ? `Showing ${sortedTasks.length} Scheduled` : `Backlog (${tasks.length})`}
                     </span>
                 </div>
                 
