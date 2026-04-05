@@ -103,7 +103,7 @@ export default function Tasks() {
         // Completed tab: show only Done tasks
         if (activeTab === 'Completed') {
             filtered = filtered.filter(t => t.status === 'Done');
-        } else if (activeTab !== 'Board') {
+        } else if (activeTab !== 'Board' && activeTab !== 'Checklist') {
             filtered = filtered.filter(t => t.status !== 'Done');
         }
         return filtered.sort((a, b) => {
@@ -332,10 +332,10 @@ export default function Tasks() {
             const d = new Date(dateStr);
             return isNaN(d.getTime()) ? 99 : d.getHours();
         };
-        const morning = sortedTasks.filter(t => t.status !== 'Done' && getHour(t.due_date) < 12);
-        const midday = sortedTasks.filter(t => t.status !== 'Done' && getHour(t.due_date) >= 12 && getHour(t.due_date) < 16);
-        const evening = sortedTasks.filter(t => t.status !== 'Done' && getHour(t.due_date) >= 16 && getHour(t.due_date) < 24);
-        const unscheduled = sortedTasks.filter(t => t.status !== 'Done' && getHour(t.due_date) === 99);
+        const morning = sortedTasks.filter(t => getHour(t.due_date) < 12);
+        const midday = sortedTasks.filter(t => getHour(t.due_date) >= 12 && getHour(t.due_date) < 16);
+        const evening = sortedTasks.filter(t => getHour(t.due_date) >= 16 && getHour(t.due_date) < 24);
+        const unscheduled = sortedTasks.filter(t => getHour(t.due_date) === 99);
 
         const QuickAddRow = ({ sectionHour }) => {
             const [val, setVal] = React.useState('');
@@ -422,8 +422,14 @@ export default function Tasks() {
                                     >
                                         {task.status === 'Done' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: color }}></div>}
                                     </div>
-                                    <div>
-                                        <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.2rem' }}>{task.title || 'Untitled Task'}</h3>
+                                    <div style={{ opacity: task.status === 'Done' ? 0.6 : 1 }}>
+                                        <h3 style={{ 
+                                            fontSize: '1.05rem', 
+                                            fontWeight: 600, 
+                                            color: 'var(--text-primary)', 
+                                            marginBottom: '0.2rem',
+                                            textDecoration: task.status === 'Done' ? 'line-through' : 'none'
+                                        }}>{task.title || 'Untitled Task'}</h3>
                                         <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
                                             <span>⏰ {task.due_date ? format(new Date(task.due_date), 'hh:mm a') : 'Anytime'}</span>
                                             {task.priority && renderPill('priority', task.priority, task.id)}
