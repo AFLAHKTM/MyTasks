@@ -132,7 +132,6 @@ export default function Tasks() {
                         <div key={task.id} className={`card ${task.status === 'Done' ? 'dimmed' : ''}`} style={{ padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                                 <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                    <input type="checkbox" checked={task.status === 'Done'} onChange={(e) => handleUpdate(task.id, 'status', e.target.checked ? 'Done' : 'Not started')} />
                                     <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{task.title || 'Untitled Task'}</div>
                                 </div>
                                 <button className="btn-icon" onClick={() => navigate(`/tasks/${task.id}`)} style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)' }}>
