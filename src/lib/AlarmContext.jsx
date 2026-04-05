@@ -269,21 +269,23 @@ export const AlarmProvider = ({ children }) => {
             return;
         }
 
-        // Only sync if it has a due date with time
+        // Only sync if it has a due date
         if (!task.due_date) return;
         
-        // Parse "YYYY-MM-DD - HH:mm"
-        const [date, time] = task.due_date.split(' - ');
-        if (!date || !time) {
-            // If it has a date but no time, we might want to remove the alarm if it was there
-            if (existing) await deleteAlarm(existing.id);
+        let dateObj;
+        try {
+            // Handle "start - end" ranges or single ISO strings
+            const dateStr = task.due_date.includes(' - ') ? task.due_date.split(' - ')[0] : task.due_date;
+            dateObj = new Date(dateStr);
+            if (isNaN(dateObj.getTime())) return;
+        } catch (e) {
             return;
         }
 
         const alarmData = {
             title: `Task: ${task.title || 'Untitled'}`,
-            date,
-            time,
+            date: dateObj.toISOString().split('T')[0],
+            time: dateObj.toTimeString().split(' ')[0].substring(0, 5), // "HH:mm"
             task_id: task.id,
             reminderMinutes: 0,
             status: 'active'

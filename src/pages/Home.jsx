@@ -69,11 +69,10 @@ export default function Home() {
     const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
 
     return (
-        <div className="page-container" style={{ margin: '0 auto', width: '100%', maxWidth: '1000px', padding: '3rem 2rem' }}>
-            <header className="page-header" style={{ marginBottom: '3rem' }}>
+        <div className="page-container" style={{ margin: '0 auto', width: '100%', maxWidth: '1000px', padding: '1.5rem 2rem' }}>
+            <header className="page-header" style={{ marginBottom: '1.5rem' }}>
                 <div>
                     <h1 style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--accent-primary)', letterSpacing: '-0.025em' }}>Good {new Date().getHours() < 12 ? 'morning' : 'afternoon'}, User</h1>
-                    <p className="page-subtitle" style={{ fontSize: '1.125rem' }}>Here is your overview for {format(new Date(), 'EEEE, MMMM do')}.</p>
                 </div>
                 <div style={{ display: 'flex', gap: '1rem' }}>
                     <NavLink to="/dashboard" className="btn btn-secondary">Enter Workspace</NavLink>

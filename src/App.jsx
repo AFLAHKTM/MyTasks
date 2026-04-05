@@ -18,6 +18,9 @@ import Team from './pages/Team';
 import Settings from './pages/Settings';
 import Completed from './pages/Completed';
 import Notes from './pages/Notes';
+import Alarms from './pages/Alarms';
+
+import { AlarmProvider } from './lib/AlarmContext';
 
 export default function App() {
   const [config, setConfig] = useState(getWorkspaceConfig());
@@ -38,28 +41,31 @@ export default function App() {
 
   return (
     <Router>
-      <div className="app-layout">
-        <Sidebar />
-        <MobileHeader />
-        <main className="main-content">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/tasks" element={<Tasks />}>
-              <Route path=":id" element={<TaskDetail />} />
-            </Route>
-            <Route path="/completed" element={<Completed />} />
-            <Route path="/create-task" element={<CreateTask />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/team" element={<Team />} />
-            <Route path="/notes" element={<Notes />} />
-            <Route path="/settings" element={<Settings />} />
-          </Routes>
-        </main>
-        {config.enable_ai_assistant && <AIAssistant />}
-        <ChromeToast />
-        <MobileNav />
-      </div>
+      <AlarmProvider>
+        <div className="app-layout">
+          <Sidebar />
+          <MobileHeader />
+          <main className="main-content">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/tasks" element={<Tasks />}>
+                <Route path=":id" element={<TaskDetail />} />
+              </Route>
+              <Route path="/completed" element={<Completed />} />
+              <Route path="/create-task" element={<CreateTask />} />
+              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/team" element={<Team />} />
+              <Route path="/notes" element={<Notes />} />
+              <Route path="/alarms" element={<Alarms />} />
+              <Route path="/settings" element={<Settings />} />
+            </Routes>
+          </main>
+          {config.enable_ai_assistant && <AIAssistant />}
+          <ChromeToast />
+          <MobileNav />
+        </div>
+      </AlarmProvider>
     </Router>
   );
 }

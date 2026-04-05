@@ -2311,3 +2311,124 @@ input:checked+.slider:before {
 .prop-delete-btn:hover {
   opacity: 1;
 }
+
+/* ================================================== 
+   🚨 ALARM SYSTEM STYLES
+   ================================================== */
+.alarm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.alarm-popup {
+  background: var(--bg-primary);
+  width: 100%;
+  max-width: 400px;
+  border-radius: 24px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border-color);
+  animation: springIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes springIn {
+  from { transform: scale(0.8) translateY(40px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.alarm-icon-pulse {
+  width: 80px;
+  height: 80px;
+  background: var(--accent-light);
+  color: var(--accent-primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem auto;
+  animation: pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(15, 23, 42, 0.4); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(15, 23, 42, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(15, 23, 42, 0); }
+}
+
+.alarm-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.alarm-time {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+}
+
+.alarm-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.alarm-btn {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.snooze-btn {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.snooze-btn:hover {
+  background: var(--bg-secondary);
+}
+
+.stop-btn {
+  background: #ef4444;
+  color: white;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.stop-btn:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 480px) {
+  .alarm-popup {
+    padding: 2rem 1.5rem;
+  }
+  
+  .alarm-title {
+    font-size: 1.25rem;
+  }
+}

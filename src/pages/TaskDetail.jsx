@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAlarms } from '../lib/AlarmContext';
 import { getTask, updateTask, deleteTask, getStatuses, getPriorities } from '../lib/data';
 import ReactMarkdown from 'react-markdown';
 import { FileText, Save, ArrowLeft, Trash2 } from 'lucide-react';
@@ -74,9 +75,13 @@ export default function TaskDetail() {
 
     if (!task) return <div style={{ padding: '2rem' }}>Loading...</div>;
 
+    const { syncAlarmWithTask } = useAlarms();
     const handleUpdate = (field, value) => {
         const updated = updateTask(id, { [field]: value });
         setTask(updated);
+        if (field === 'due_date' || field === 'status' || field === 'title') {
+            syncAlarmWithTask(updated);
+        }
     };
 
     const handleDelete = () => {

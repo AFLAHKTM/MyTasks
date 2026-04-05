@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { getTasks, updateTask, deleteTask, createTask, getStatuses, saveStatuses, getPriorities } from '../lib/data';
 import { NavLink, useNavigate, Outlet, useMatch } from 'react-router-dom';
+import { useAlarms } from '../lib/AlarmContext';
 import { Columns, LayoutList, Plus, MoreHorizontal, FileText, Type, Users, Calendar, AlertCircle, Maximize2, ListChecks, Edit3, ArrowUpDown, Trash2 } from 'lucide-react';
 import GlassDatePicker from '../components/GlassDatePicker';
 import { formatTaskDate } from '../lib/utils';
@@ -113,9 +114,13 @@ export default function Tasks() {
         });
     }, [tasks, systemPriorities, showTodayOnly, currentDayIndex]);
 
+    const { syncAlarmWithTask } = useAlarms();
     const handleUpdate = (id, field, value) => {
-        updateTask(id, { [field]: value });
+        const updated = updateTask(id, { [field]: value });
         refreshTasks();
+        if (field === 'due_date' || field === 'status' || field === 'title') {
+            syncAlarmWithTask(updated);
+        }
     };
 
     const handleAddQuickTask = (status = 'Not started') => {
@@ -610,10 +615,9 @@ export default function Tasks() {
 
     return (
         <div className="page-container" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div className="page-header" style={{ marginBottom: '1rem' }}>
+            <div className="page-header" style={{ marginBottom: '0.5rem' }}>
                 <div>
                     <h1 className="page-title">Tasks Directory</h1>
-                    <p className="page-subtitle">Manage and track your primary tasks.</p>
                 </div>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
                     {isMobile && (
