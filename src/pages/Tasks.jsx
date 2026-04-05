@@ -187,7 +187,7 @@ export default function Tasks() {
                                 </div>
                                 <div className="board-cards">
                                     {colTasks.map(task => (
-                                        <div key={task.id} className={`task-card ${isMobile ? 'task-card-outline' : ''}`} onClick={() => navigate(`/tasks/${task.id}`)}>
+                                        <div key={task.id} className="task-card" style={{ cursor: 'default' }}>
                                             <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.5rem' }}>{task.title || 'Untitled'}</div>
                                             <div style={{ display: 'flex', gap: '0.5rem', fontSize: '0.7rem' }}>
                                                 {task.priority && renderPill('priority', task.priority)}
