@@ -118,10 +118,19 @@ export default function Tasks() {
         setDragOverStatus(null);
     };
 
-    const renderPill = (type, value) => {
+    const renderPill = (type, value, taskId) => {
         const list = type === 'status' ? systemStatuses : systemPriorities;
         const matched = list.find(l => l.name === value) || { color: 'badge-gray' };
-        return <span className={`badge ${matched.color}`}>{value}</span>;
+        
+        const handleClick = (e) => {
+            e.stopPropagation();
+            if (!taskId) return;
+            const currentIndex = list.findIndex(l => l.name === value);
+            const nextIndex = (currentIndex + 1) % list.length;
+            handleUpdate(taskId, type, list[nextIndex].name);
+        };
+
+        return <span className={`badge ${matched.color}`} style={{ cursor: 'pointer', userSelect: 'none' }} onClick={handleClick}>{value}</span>;
     };
 
     const renderTableView = () => {
@@ -138,10 +147,10 @@ export default function Tasks() {
                                     <ChevronRight size={18} />
                                 </button>
                             </div>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                                {renderPill('status', task.status || 'Not started')}
-                                {task.priority && renderPill('priority', task.priority)}
-                            </div>
+                                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                                    {task.status && renderPill('status', task.status, task.id)}
+                                    {task.priority && renderPill('priority', task.priority, task.id)}
+                                </div>
                             <div style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Due:</span>
                                 <GlassDatePicker value={task.due_date} onChange={val => handleUpdate(task.id, 'due_date', val)} />
@@ -178,8 +187,8 @@ export default function Tasks() {
                                 <td>
                                     <div style={{ fontWeight: 600 }}>{task.title || 'Untitled Task'}</div>
                                 </td>
-                                <td>{renderPill('status', task.status || 'Not started')}</td>
-                                <td>{renderPill('priority', task.priority || 'Medium')}</td>
+                                <td>{renderPill('status', task.status || 'Not started', task.id)}</td>
+                                <td>{renderPill('priority', task.priority || 'Medium', task.id)}</td>
                                 <td>
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                         <GlassDatePicker value={task.due_date} onChange={val => handleUpdate(task.id, 'due_date', val)} />
@@ -246,7 +255,7 @@ export default function Tasks() {
                             >
                                 <div className="board-header">
                                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        {renderPill('status', status)}
+                                        {renderPill('status', status, null)}
                                         <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem' }}>{colTasks.length}</span>
                                     </span>
                                     <Plus size={14} style={{ cursor: 'pointer' }} onClick={() => handleAddQuickTask(status)} />
@@ -266,7 +275,7 @@ export default function Tasks() {
                                                 <ChevronRight size={14} opacity={0.5} />
                                             </div>
                                             <div style={{ display: 'flex', gap: '0.5rem', fontSize: '0.7rem' }}>
-                                                {task.priority && renderPill('priority', task.priority)}
+                                                {task.priority && renderPill('priority', task.priority, task.id)}
                                                 {task.due_date && <span style={{ color: 'var(--text-tertiary)' }}>{formatTaskDate(task.due_date)}</span>}
                                             </div>
                                         </div>
@@ -333,7 +342,7 @@ export default function Tasks() {
                                         <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.2rem' }}>{task.title || 'Untitled Task'}</h3>
                                         <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
                                             <span>⏰ {task.due_date ? format(new Date(task.due_date), 'hh:mm a') : 'Anytime'}</span>
-                                            {task.priority && <span style={{ color: `var(--${systemPriorities.find(p => p.name === task.priority)?.color || 'gray'}-text)` }}>• {task.priority}</span>}
+                                            {task.priority && renderPill('priority', task.priority, task.id)}
                                         </div>
                                     </div>
                                 </div>
