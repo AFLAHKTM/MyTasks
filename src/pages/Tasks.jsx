@@ -166,7 +166,12 @@ export default function Tasks() {
                     </thead>
                     <tbody>
                         {sortedTasks.map(task => (
-                            <tr key={task.id} className={task.status === 'Done' ? 'dimmed' : ''}>
+                            <tr 
+                                key={task.id} 
+                                className={task.status === 'Done' ? 'dimmed' : ''}
+                                onClick={() => navigate(`/tasks/${task.id}`)}
+                                style={{ cursor: 'pointer' }}
+                            >
                                 <td>
                                     <input type="checkbox" checked={task.status === 'Done'} onChange={(e) => { e.stopPropagation(); handleUpdate(task.id, 'status', e.target.checked ? 'Done' : 'Not started'); }} />
                                 </td>
@@ -178,13 +183,7 @@ export default function Tasks() {
                                 <td>
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                         <GlassDatePicker value={task.due_date} onChange={val => handleUpdate(task.id, 'due_date', val)} />
-                                        <button 
-                                            className="btn-icon" 
-                                            onClick={() => navigate(`/tasks/${task.id}`)}
-                                            style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer' }}
-                                        >
-                                            <ChevronRight size={18} />
-                                        </button>
+                                        <ChevronRight size={18} opacity={0.5} />
                                     </div>
                                 </td>
                             </tr>
@@ -259,17 +258,12 @@ export default function Tasks() {
                                             className="task-card" 
                                             draggable 
                                             onDragStart={(e) => onCardDragStart(e, task.id)}
-                                            style={{ cursor: 'grab' }}
+                                            onClick={() => navigate(`/tasks/${task.id}`)}
+                                            style={{ cursor: draggingCardId === task.id ? 'grabbing' : 'pointer' }}
                                         >
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                 <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.5rem' }}>{task.title || 'Untitled'}</div>
-                                                <button 
-                                                    className="btn-icon" 
-                                                    onClick={() => navigate(`/tasks/${task.id}`)}
-                                                    style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', padding: 0 }}
-                                                >
-                                                    <ChevronRight size={14} />
-                                                </button>
+                                                <ChevronRight size={14} opacity={0.5} />
                                             </div>
                                             <div style={{ display: 'flex', gap: '0.5rem', fontSize: '0.7rem' }}>
                                                 {task.priority && renderPill('priority', task.priority)}
@@ -312,6 +306,7 @@ export default function Tasks() {
                             <div 
                                 key={task.id} 
                                 className="card" 
+                                onClick={() => navigate(`/tasks/${task.id}`)}
                                 style={{ 
                                     padding: '1.25rem', 
                                     borderLeft: `6px solid ${color}`,
@@ -319,7 +314,8 @@ export default function Tasks() {
                                     justifyContent: 'space-between', 
                                     alignItems: 'center',
                                     background: 'var(--bg-secondary)',
-                                    borderRadius: '16px'
+                                    borderRadius: '16px',
+                                    cursor: 'pointer'
                                 }}
                             >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
@@ -327,14 +323,13 @@ export default function Tasks() {
                                         style={{ 
                                             width: '24px', height: '24px', borderRadius: '50%', 
                                             border: `2px solid ${task.status === 'Done' ? color : 'var(--border-color)'}`, 
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            cursor: 'pointer'
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
                                         }}
                                         onClick={(e) => { e.stopPropagation(); handleUpdate(task.id, 'status', task.status === 'Done' ? 'Not started' : 'Done'); }}
                                     >
                                         {task.status === 'Done' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: color }}></div>}
                                     </div>
-                                    <div style={{ cursor: 'pointer' }} onClick={() => navigate(`/tasks/${task.id}`)}>
+                                    <div>
                                         <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.2rem' }}>{task.title || 'Untitled Task'}</h3>
                                         <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
                                             <span>⏰ {task.due_date ? format(new Date(task.due_date), 'hh:mm a') : 'Anytime'}</span>
@@ -342,9 +337,7 @@ export default function Tasks() {
                                         </div>
                                     </div>
                                 </div>
-                                <button className="btn-icon" onClick={() => navigate(`/tasks/${task.id}`)} style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)' }}>
-                                    <ChevronRight size={18} />
-                                </button>
+                                <ChevronRight size={18} opacity={0.5} />
                             </div>
                         ))
                     )}

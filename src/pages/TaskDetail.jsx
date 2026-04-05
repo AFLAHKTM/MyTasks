@@ -335,7 +335,15 @@ export default function TaskDetail() {
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '3rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem' }}>
                     <button className="btn btn-danger" onClick={handleDelete}><Trash2 size={16} /> Delete Task</button>
-                    <button className="btn btn-primary" onClick={() => navigate('/tasks')}><Save size={16} /> Save Changes</button>
+                    <button 
+                        className="btn btn-primary" 
+                        onClick={() => {
+                            updateTask(id, { title: localTitle, assignee: localAssignee, content: localContent });
+                            navigate('/tasks');
+                        }}
+                    >
+                        <Save size={16} /> Save and Close
+                    </button>
                 </div>
             </div>
         </div>
