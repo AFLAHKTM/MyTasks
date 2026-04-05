@@ -281,15 +281,12 @@ export default function Tasks() {
                                             onClick={() => navigate(`/tasks/${task.id}`)}
                                             style={{ cursor: draggingCardId === task.id ? 'grabbing' : 'pointer' }}
                                         >
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                            <div 
+                                                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', cursor: 'pointer' }}
+                                                onClick={(e) => { navigate(`/tasks/${task.id}`); }}
+                                            >
                                                 <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.5rem' }}>{task.title || 'Untitled'}</div>
-                                                <button 
-                                                    className="btn-icon" 
-                                                    onClick={(e) => { e.stopPropagation(); navigate(`/tasks/${task.id}`); }}
-                                                    style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', padding: '2px' }}
-                                                >
-                                                    <ChevronRight size={16} opacity={0.5} />
-                                                </button>
+                                                <ChevronRight size={16} opacity={0.5} />
                                             </div>
                                             <div style={{ display: 'flex', gap: '0.5rem', fontSize: '0.7rem' }}>
                                                 {task.priority && renderPill('priority', task.priority, task.id)}
