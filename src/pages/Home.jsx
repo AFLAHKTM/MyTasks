@@ -21,18 +21,37 @@ export default function Home() {
         };
     }, []);
 
+    const todayIdx = new Date().getDay();
     const todayTasks = tasks.filter(t => {
         if (t.status === 'Done') return false;
         if (!t.status) return false;
-        if (!t.due_date) return false;
-        const d = new Date(t.due_date.split(' - ')[0]);
-        return isSameDay(d, new Date()) || d < new Date();
-    }).sort((a, b) => new Date(a.due_date.split(' - ')[0]) - new Date(b.due_date.split(' - ')[0]));
+        
+        // Match recurring days
+        if (t.recurring_days && (t.recurring_days.includes(todayIdx) || t.every_day)) return true;
+        
+        // Match specific due date
+        if (t.due_date) {
+            const d = new Date(t.due_date.split(' - ')[0]);
+            return isSameDay(d, new Date()) || d < new Date();
+        }
+        return false;
+    }).sort((a, b) => {
+        const getTaskTime = (dueDate) => {
+            if (!dueDate) return Infinity;
+            const d = new Date(dueDate.split(' - ')[0]);
+            return isNaN(d.getTime()) ? Infinity : d.getTime();
+        };
+        return getTaskTime(a.due_date) - getTaskTime(b.due_date);
+    });
+
     const todaySummaryTasks = tasks.filter(t => {
         if (!t.status) return false;
-        if (!t.due_date) return false;
-        const d = new Date(t.due_date.split(' - ')[0]);
-        return isSameDay(d, new Date()) || d < new Date();
+        if (t.recurring_days && (t.recurring_days.includes(todayIdx) || t.every_day)) return true;
+        if (t.due_date) {
+            const d = new Date(t.due_date.split(' - ')[0]);
+            return isSameDay(d, new Date()) || d < new Date();
+        }
+        return false;
     });
 
     const recentTasks = [...tasks]

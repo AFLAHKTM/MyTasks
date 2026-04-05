@@ -24,10 +24,11 @@ export default function Tasks() {
     const [isCompactView, setIsCompactView] = useState(false);
     const [showTodayOnly, setShowTodayOnly] = useState(true);
 
+    const currentDayIndex = useMemo(() => new Date().getDay(), []);
     const currentDayName = useMemo(() => {
         const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-        return days[new Date().getDay()];
-    }, []);
+        return days[currentDayIndex];
+    }, [currentDayIndex]);
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -97,7 +98,7 @@ export default function Tasks() {
         return baseSorted.filter(task => {
             // 1. If it's recurring, check if today is selected
             if (task.recurring_days && task.recurring_days.length > 0) {
-                return task.recurring_days.includes(currentDayName) || task.all_day_recurring;
+                return task.recurring_days.includes(currentDayIndex) || task.every_day;
             }
             
             // 2. If it has a specific due date, check if it's today
@@ -110,7 +111,7 @@ export default function Tasks() {
             // But for 'Today's Focus', we hide unscheduled items to keep it clean.
             return false;
         });
-    }, [tasks, systemPriorities, showTodayOnly, currentDayName]);
+    }, [tasks, systemPriorities, showTodayOnly, currentDayIndex]);
 
     const handleUpdate = (id, field, value) => {
         updateTask(id, { [field]: value });

@@ -119,6 +119,8 @@ const syncFromSupabase = async () => {
         status: t.status,
         content: t.content,
         notes: t.notes || [],
+        recurring_days: t.recurring_days || [],
+        every_day: !!t.every_day,
         created_at: t.created_at || new Date().toISOString()
       })));
     } else {
@@ -240,6 +242,8 @@ export const initDB = async () => {
         status: t.status,
         content: t.content,
         notes: t.notes || [],
+        recurring_days: t.recurring_days || [],
+        every_day: !!t.every_day,
         created_at: t.created_at || new Date().toISOString()
       })));
       
@@ -322,6 +326,8 @@ export const createTask = (taskData) => {
     ...taskData,
     id: uuidv4(),
     notes: taskData.notes || [],
+    recurring_days: taskData.recurring_days || [],
+    every_day: !!taskData.every_day,
     created_at: new Date().toISOString()
   };
 
