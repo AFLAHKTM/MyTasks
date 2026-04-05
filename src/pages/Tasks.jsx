@@ -138,20 +138,25 @@ export default function Tasks() {
             return (
                 <div className="flex-col gap-3">
                     {sortedTasks.map(task => (
-                        <div key={task.id} className={`card ${task.status === 'Done' ? 'dimmed' : ''}`} style={{ padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                        <div 
+                            key={task.id} 
+                            className={`card ${task.status === 'Done' ? 'dimmed' : ''}`} 
+                            onClick={() => navigate(`/tasks/${task.id}`)}
+                            style={{ padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-color)', cursor: 'pointer' }}
+                        >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                                 <div style={{ display: 'flex', gap: '0.75rem' }}>
                                     <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{task.title || 'Untitled Task'}</div>
                                 </div>
-                                <button className="btn-icon" onClick={() => navigate(`/tasks/${task.id}`)} style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)' }}>
+                                <button className="btn-icon" onClick={(e) => { e.stopPropagation(); navigate(`/tasks/${task.id}`); }} style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)' }}>
                                     <ChevronRight size={18} />
                                 </button>
                             </div>
-                                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-                                    {task.status && renderPill('status', task.status, task.id)}
-                                    {task.priority && renderPill('priority', task.priority, task.id)}
-                                </div>
-                            <div style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                                {task.status && renderPill('status', task.status, task.id)}
+                                {task.priority && renderPill('priority', task.priority, task.id)}
+                            </div>
+                            <div style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }} onClick={(e) => e.stopPropagation()}>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Due:</span>
                                 <GlassDatePicker value={task.due_date} onChange={val => handleUpdate(task.id, 'due_date', val)} />
                             </div>
