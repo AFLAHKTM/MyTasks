@@ -34,7 +34,7 @@ export default function Sidebar() {
 
     const routes = [
         { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={18} /> },
-        { name: 'Tasks', path: '/tasks', icon: <CheckSquare size={18} /> },
+        { name: 'Checklist', path: '/tasks', icon: <CheckSquare size={18} /> },
         { name: 'Notes', path: '/notes', icon: <StickyNote size={18} /> },
         { name: 'Completed', path: '/completed', icon: <Archive size={18} /> },
         { name: 'Calendar', path: '/calendar', icon: <Calendar size={18} /> },
