@@ -650,39 +650,65 @@ export default function Tasks() {
                     </span>
                 </div>
                 
-                <div className="filter-toggle" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '20px', padding: '3px' }}>
-                    <button 
-                        onClick={() => setShowTodayOnly(true)}
-                        style={{ 
-                            padding: '0.4rem 1.25rem', 
-                            fontSize: '0.75rem',
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <button
+                        onClick={() => {
+                            if (confirm('Move all unscheduled/overdue tasks to Today?')) {
+                                tasks.forEach(task => {
+                                    if (task.status !== 'Done') {
+                                        updateTask(task.id, { due_date: new Date().toISOString() });
+                                    }
+                                });
+                                refreshTasks();
+                            }
+                        }}
+                        style={{
+                            background: 'transparent',
+                            border: '1px dashed var(--border-color)',
+                            color: 'var(--text-tertiary)',
+                            fontSize: '0.7rem',
                             fontWeight: 600,
-                            borderRadius: '18px', 
-                            border: 'none', 
-                            background: showTodayOnly ? 'var(--accent-primary)' : 'transparent',
-                            color: showTodayOnly ? 'white' : 'var(--text-tertiary)',
+                            padding: '0.4rem 0.75rem',
+                            borderRadius: '18px',
                             cursor: 'pointer',
-                            transition: 'all 0.2s ease'
                         }}
                     >
-                        TODAY
+                        RESCHEDULE ALL
                     </button>
-                    <button 
-                        onClick={() => setShowTodayOnly(false)}
-                        style={{ 
-                            padding: '0.4rem 1.25rem', 
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
-                            borderRadius: '18px', 
-                            border: 'none', 
-                            background: !showTodayOnly ? 'var(--accent-primary)' : 'transparent',
-                            color: !showTodayOnly ? 'white' : 'var(--text-tertiary)',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease'
-                        }}
-                    >
-                        ALL
-                    </button>
+                    <div className="filter-toggle" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '20px', padding: '3px' }}>
+                        <button 
+                            onClick={() => setShowTodayOnly(true)}
+                            style={{ 
+                                padding: '0.4rem 1.25rem', 
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                borderRadius: '18px', 
+                                border: 'none', 
+                                background: showTodayOnly ? 'var(--accent-primary)' : 'transparent',
+                                color: showTodayOnly ? 'white' : 'var(--text-tertiary)',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease'
+                            }}
+                        >
+                            TODAY
+                        </button>
+                        <button 
+                            onClick={() => setShowTodayOnly(false)}
+                            style={{ 
+                                padding: '0.4rem 1.25rem', 
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                borderRadius: '18px', 
+                                border: 'none', 
+                                background: !showTodayOnly ? 'var(--accent-primary)' : 'transparent',
+                                color: !showTodayOnly ? 'white' : 'var(--text-tertiary)',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease'
+                            }}
+                        >
+                            ALL
+                        </button>
+                    </div>
                 </div>
             </div>
 

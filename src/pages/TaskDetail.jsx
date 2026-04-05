@@ -125,7 +125,32 @@ export default function TaskDetail() {
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', alignItems: 'center' }}>
                         <span style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>Due Date</span>
-                        <GlassDatePicker value={task.due_date} onChange={val => handleUpdate('due_date', val)} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <GlassDatePicker value={task.due_date} onChange={val => handleUpdate('due_date', val)} />
+                            <button 
+                                onClick={() => {
+                                    const now = new Date();
+                                    // Preserve time if already there
+                                    if (task.due_date && task.due_date.includes('T')) {
+                                        const oldTime = new Date(task.due_date);
+                                        now.setHours(oldTime.getHours(), oldTime.getMinutes(), 0, 0);
+                                    }
+                                    handleUpdate('due_date', now.toISOString());
+                                }}
+                                style={{
+                                    background: 'var(--accent-light)',
+                                    color: 'var(--accent-primary)',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    padding: '0.2rem 0.6rem',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700,
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                TODAY
+                            </button>
+                        </div>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', alignItems: 'center' }}>
                         <span style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>Priority</span>
