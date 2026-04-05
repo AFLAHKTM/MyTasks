@@ -104,51 +104,77 @@ export default function Tasks() {
         return <span className={`badge ${matched.color}`}>{value}</span>;
     };
 
-    const renderTableView = () => (
-        <div className="table-container">
-            <table className="table">
-                <thead>
-                    <tr>
-                        <th style={{ width: '40px' }}></th>
-                        <th>Task Name</th>
-                        {!isMobile && <th>Status</th>}
-                        {!isMobile && <th>Priority</th>}
-                        <th style={{ width: '180px' }}>Due Date</th>
-                    </tr>
-                </thead>
-                <tbody>
+    const renderTableView = () => {
+        if (isMobile) {
+            return (
+                <div className="flex-col gap-3">
                     {sortedTasks.map(task => (
-                        <tr key={task.id} className={task.status === 'Done' ? 'dimmed' : ''}>
-                            <td>
-                                <input type="checkbox" checked={task.status === 'Done'} onChange={(e) => { e.stopPropagation(); handleUpdate(task.id, 'status', e.target.checked ? 'Done' : 'Not started'); }} />
-                            </td>
-                            <td>
-                                <div style={{ fontWeight: 600 }}>{task.title || 'Untitled Task'}</div>
-                                {isMobile && <div style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>{renderPill('status', task.status)} {renderPill('priority', task.priority)}</div>}
-                            </td>
-                            {!isMobile && <td>{renderPill('status', task.status || 'Not started')}</td>}
-                            {!isMobile && <td>{renderPill('priority', task.priority || 'Medium')}</td>}
-                            <td>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <GlassDatePicker value={task.due_date} onChange={val => handleUpdate(task.id, 'due_date', val)} />
-                                    <button 
-                                        className="btn-icon" 
-                                        onClick={() => navigate(`/tasks/${task.id}`)}
-                                        style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer' }}
-                                    >
-                                        <ChevronRight size={18} />
-                                    </button>
+                        <div key={task.id} className={`card ${task.status === 'Done' ? 'dimmed' : ''}`} style={{ padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                    <input type="checkbox" checked={task.status === 'Done'} onChange={(e) => handleUpdate(task.id, 'status', e.target.checked ? 'Done' : 'Not started')} />
+                                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{task.title || 'Untitled Task'}</div>
                                 </div>
-                            </td>
-                        </tr>
+                                <button className="btn-icon" onClick={() => navigate(`/tasks/${task.id}`)} style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)' }}>
+                                    <ChevronRight size={18} />
+                                </button>
+                            </div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                                {renderPill('status', task.status || 'Not started')}
+                                {task.priority && renderPill('priority', task.priority)}
+                            </div>
+                            <div style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Due:</span>
+                                <GlassDatePicker value={task.due_date} onChange={val => handleUpdate(task.id, 'due_date', val)} />
+                            </div>
+                        </div>
                     ))}
-                    {sortedTasks.length === 0 && (
-                        <tr><td colSpan="5" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-tertiary)' }}>No tasks found matching your criteria.</td></tr>
-                    )}
-                </tbody>
-            </table>
-        </div>
-    );
+                </div>
+            );
+        }
+
+        return (
+            <div className="table-container">
+                <table className="table">
+                    <thead>
+                        <tr>
+                            <th style={{ width: '40px' }}></th>
+                            <th>Task Name</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th style={{ width: '180px' }}>Due Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {sortedTasks.map(task => (
+                            <tr key={task.id} className={task.status === 'Done' ? 'dimmed' : ''}>
+                                <td>
+                                    <input type="checkbox" checked={task.status === 'Done'} onChange={(e) => { e.stopPropagation(); handleUpdate(task.id, 'status', e.target.checked ? 'Done' : 'Not started'); }} />
+                                </td>
+                                <td>
+                                    <div style={{ fontWeight: 600 }}>{task.title || 'Untitled Task'}</div>
+                                </td>
+                                <td>{renderPill('status', task.status || 'Not started')}</td>
+                                <td>{renderPill('priority', task.priority || 'Medium')}</td>
+                                <td>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <GlassDatePicker value={task.due_date} onChange={val => handleUpdate(task.id, 'due_date', val)} />
+                                        <button 
+                                            className="btn-icon" 
+                                            onClick={() => navigate(`/tasks/${task.id}`)}
+                                            style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer' }}
+                                        >
+                                            <ChevronRight size={18} />
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        );
+    };
 
     const renderBoardView = () => {
         const statuses = systemStatuses.map(s => s.name);
