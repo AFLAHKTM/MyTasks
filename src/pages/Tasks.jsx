@@ -15,7 +15,7 @@ import GlassDatePicker from '../components/GlassDatePicker';
 
 export default function Tasks() {
     const [tasks, setTasks] = useState([]);
-    const [activeTab, setActiveTab] = useState('Focus');
+    const [activeTab, setActiveTab] = useState('Checklist');
     const [searchQuery, setSearchQuery] = useState('');
     const [showTodayOnly, setShowTodayOnly] = useState(true);
     const [isCompactView, setIsCompactView] = useState(false);
@@ -252,10 +252,9 @@ export default function Tasks() {
 
     const renderView = () => {
         switch (activeTab) {
-            case 'Focus': return renderFocusView();
+            case 'Checklist': return renderFocusView();
             case 'Table': return renderTableView();
             case 'Board': return renderBoardView();
-            case 'Checklist': return <div className="checklist-view">{renderTableView()}</div>; // Fallback to list
             case 'Completed': return <div className="completed-view">{renderTableView()}</div>; // Fallback to list
             default: return renderFocusView();
         }
@@ -291,12 +290,11 @@ export default function Tasks() {
             </div>
 
             <div className="tabs" style={{ margin: '1rem 0', padding: '4px', background: 'var(--bg-secondary)', borderRadius: '30px', border: '1px solid var(--border-color)', display: 'inline-flex', alignSelf: 'center', width: isMobile ? 'auto' : 'fit-content' }}>
-                {['Focus', 'Table', 'Board', 'Checklist', 'Completed'].map(tab => (
+                {['Checklist', 'Table', 'Board', 'Completed'].map(tab => (
                     <div key={tab} className={`tab ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)} style={{ padding: isMobile ? '0.6rem 1.25rem' : '0.6rem 1.5rem', borderRadius: '25px', display: 'flex', alignItems: 'center', gap: '0.6rem', transition: 'all 0.3s ease' }}>
-                        {tab === 'Focus' && <Sparkles size={isMobile ? 20 : 16} />}
+                        {tab === 'Checklist' && <ListChecks size={isMobile ? 20 : 16} />}
                         {tab === 'Table' && <LayoutList size={isMobile ? 20 : 16} />}
                         {tab === 'Board' && <Columns size={isMobile ? 20 : 16} />}
-                        {tab === 'Checklist' && <ListChecks size={isMobile ? 20 : 16} />}
                         {tab === 'Completed' && <Edit3 size={isMobile ? 20 : 16} />}
                         {!isMobile && tab}
                     </div>
