@@ -482,39 +482,36 @@ export default function Tasks() {
         return (
             <div className="board-view-wrapper">
                 {isMobile && (
-                    <div className="mobile-status-selector">
+                    <div className="mobile-status-selector" style={{ 
+                        padding: '4px', 
+                        background: 'var(--bg-secondary)', 
+                        borderRadius: '35px', 
+                        border: '1px solid var(--border-color)',
+                        marginBottom: '1.5rem'
+                    }}>
                         {systemStatuses.map(s => (
                             <div 
                                 key={s.name} 
-                                className={`mobile-status-pill-item ${activeBoardStatus === s.name ? 'active' : ''} ${dragOverStatus === s.name ? 'drop-target' : ''}`}
+                                className={`mobile-status-pill-item ${activeBoardStatus === s.name ? 'active' : ''}`}
                                 onClick={() => {
                                     setActiveBoardStatus(s.name);
                                     const el = document.getElementById(`col-${s.name}`);
                                     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                                 }}
-                                onDragOver={(e) => {
-                                    if (draggingCardId) {
-                                        e.preventDefault();
-                                        setDragOverStatus(s.name);
-                                    }
-                                }}
-                                onDragLeave={() => {
-                                    if (draggingCardId) setDragOverStatus(null);
-                                }}
-                                onDrop={(e) => {
-                                    if (draggingCardId) {
-                                        e.preventDefault();
-                                        handleUpdate(draggingCardId, 'status', s.name);
-                                        setDraggingCardId(null);
-                                        setDragOverStatus(null);
-                                        setActiveBoardStatus(s.name);
-                                        refreshTasks();
-                                    }
-                                }}
                                 style={{ 
-                                    backgroundColor: activeBoardStatus === s.name ? `var(--${s.color}-text)` : 'rgba(255,255,255,0.1)',
+                                    flex: 1,
+                                    textAlign: 'center',
+                                    padding: '0.6rem 0.5rem',
+                                    borderRadius: '30px',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 800,
+                                    letterSpacing: '0.05em',
+                                    textTransform: 'uppercase',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    backgroundColor: activeBoardStatus === s.name ? `var(--${s.color}-text)` : 'transparent',
                                     color: activeBoardStatus === s.name ? 'white' : 'var(--text-tertiary)',
-                                    borderColor: activeBoardStatus === s.name ? 'white' : 'transparent'
+                                    boxShadow: activeBoardStatus === s.name ? `0 4px 15px var(--${s.color}-text)` : 'none',
+                                    opacity: activeBoardStatus === s.name ? 1 : 0.6
                                 }}
                             >
                                 {s.name}
@@ -620,7 +617,7 @@ export default function Tasks() {
                     <h1 className="page-title">Tasks Directory</h1>
                 </div>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    {isMobile && (
+                    {!isMobile && (
                         <button 
                             className={`btn ${isCompactView ? 'btn-primary' : 'btn-secondary'}`} 
                             onClick={() => setIsCompactView(!isCompactView)}
@@ -723,18 +720,31 @@ export default function Tasks() {
                 </div>
             </div>
 
-            <div className="tabs">
-                <div className={`tab ${activeTab === 'Table' ? 'active' : ''}`} onClick={() => setActiveTab('Table')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <LayoutList size={16} /> Table
+            <div className="tabs" style={{ 
+                margin: '1rem 0', 
+                padding: '4px', 
+                background: 'var(--bg-secondary)', 
+                borderRadius: '30px', 
+                border: '1px solid var(--border-color)',
+                display: 'inline-flex',
+                alignSelf: 'center',
+                width: isMobile ? 'auto' : 'fit-content'
+            }}>
+                <div className={`tab ${activeTab === 'Table' ? 'active' : ''}`} onClick={() => setActiveTab('Table')} 
+                    style={{ padding: isMobile ? '0.6rem 1.25rem' : '0.6rem 1.5rem', borderRadius: '25px', display: 'flex', alignItems: 'center', gap: '0.6rem', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+                    <LayoutList size={isMobile ? 20 : 16} /> {!isMobile && 'Table'}
                 </div>
-                <div className={`tab ${activeTab === 'Board' ? 'active' : ''}`} onClick={() => setActiveTab('Board')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Columns size={16} /> Kanban Board
+                <div className={`tab ${activeTab === 'Board' ? 'active' : ''}`} onClick={() => setActiveTab('Board')} 
+                    style={{ padding: isMobile ? '0.6rem 1.25rem' : '0.6rem 1.5rem', borderRadius: '25px', display: 'flex', alignItems: 'center', gap: '0.6rem', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+                    <Columns size={isMobile ? 20 : 16} /> {!isMobile && 'Kanban Board'}
                 </div>
-                <div className={`tab ${activeTab === 'Checklist' ? 'active' : ''}`} onClick={() => setActiveTab('Checklist')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <ListChecks size={16} /> Checklist
+                <div className={`tab ${activeTab === 'Checklist' ? 'active' : ''}`} onClick={() => setActiveTab('Checklist')} 
+                    style={{ padding: isMobile ? '0.6rem 1.25rem' : '0.6rem 1.5rem', borderRadius: '25px', display: 'flex', alignItems: 'center', gap: '0.6rem', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+                    <ListChecks size={isMobile ? 20 : 16} /> {!isMobile && 'Checklist'}
                 </div>
-                <div className={`tab ${activeTab === 'Completed' ? 'active' : ''}`} onClick={() => setActiveTab('Completed')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Edit3 size={16} /> Completed
+                <div className={`tab ${activeTab === 'Completed' ? 'active' : ''}`} onClick={() => setActiveTab('Completed')} 
+                    style={{ padding: isMobile ? '0.6rem 1.25rem' : '0.6rem 1.5rem', borderRadius: '25px', display: 'flex', alignItems: 'center', gap: '0.6rem', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+                    <Edit3 size={isMobile ? 20 : 16} /> {!isMobile && 'Completed'}
                 </div>
             </div>
 
