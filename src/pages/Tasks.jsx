@@ -10,12 +10,36 @@ import {
 } from 'lucide-react';
 import { format, isSameDay, isPast, isToday, parseISO, startOfDay, addDays } from 'date-fns';
 import { formatTaskDate } from '../lib/utils';
-import { useNavigate, Outlet, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Outlet, useSearchParams } from 'react-router-dom';
 import GlassDatePicker from '../components/GlassDatePicker';
 
 export default function Tasks() {
     const [tasks, setTasks] = useState([]);
-    const [activeTab, setActiveTab] = useState('Checklist');
+    const navigate = useNavigate();
+    const { id: taskId } = useParams();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [activeTab, setActiveTab] = useState(searchParams.get('view') || 'Checklist');
+    const isEditing = !!taskId;
+    const isMobile = window.innerWidth <= 768;
+
+    useEffect(() => {
+        const view = searchParams.get('view');
+        if (view) {
+            setActiveTab(view);
+        }
+    }, [searchParams]);
+
+    useEffect(() => {
+        if (!searchParams.get('view')) {
+            setSearchParams({ view: activeTab }, { replace: true });
+        }
+    }, []);
+
+    const handleTabChange = (tab) => {
+        setActiveTab(tab);
+        setSearchParams({ view: tab });
+    };
+
     const [searchQuery, setSearchQuery] = useState('');
     const [showTodayOnly, setShowTodayOnly] = useState(true);
     const [isCompactView, setIsCompactView] = useState(false);
@@ -25,11 +49,6 @@ export default function Tasks() {
     const [activeBoardStatus, setActiveBoardStatus] = useState('Not started');
     const { syncAlarmWithTask } = useAlarms();
     
-    const navigate = useNavigate();
-    const { id: taskId } = useParams();
-    const isEditing = !!taskId;
-    const isMobile = window.innerWidth <= 768;
-
     const refreshTasks = useCallback(() => {
         setTasks(getTasks());
     }, []);
@@ -493,17 +512,19 @@ export default function Tasks() {
                 </div>
             </div>
 
-            <div className="tabs" style={{ margin: '1rem 0', padding: '4px', background: 'var(--bg-secondary)', borderRadius: '30px', border: '1px solid var(--border-color)', display: (isMobile && isEditing) ? 'none' : 'inline-flex', alignSelf: 'center', width: isMobile ? 'auto' : 'fit-content' }}>
-                {['Checklist', 'Table', 'Board', 'Completed'].map(tab => (
-                    <div key={tab} className={`tab ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)} style={{ padding: isMobile ? '0.6rem 1.25rem' : '0.6rem 1.5rem', borderRadius: '25px', display: 'flex', alignItems: 'center', gap: '0.6rem', transition: 'all 0.3s ease' }}>
-                        {tab === 'Checklist' && <ListChecks size={isMobile ? 20 : 16} />}
-                        {tab === 'Table' && <LayoutList size={isMobile ? 20 : 16} />}
-                        {tab === 'Board' && <Columns size={isMobile ? 20 : 16} />}
-                        {tab === 'Completed' && <Edit3 size={isMobile ? 20 : 16} />}
-                        {!isMobile && tab}
-                    </div>
-                ))}
-            </div>
+            {!isMobile && (
+                <div className="tabs" style={{ margin: '1rem 0', padding: '4px', background: 'var(--bg-secondary)', borderRadius: '30px', border: '1px solid var(--border-color)', display: isEditing ? 'none' : 'inline-flex', alignSelf: 'center', width: 'fit-content' }}>
+                    {['Checklist', 'Table', 'Board', 'Completed'].map(tab => (
+                        <div key={tab} className={`tab ${activeTab === tab ? 'active' : ''}`} onClick={() => handleTabChange(tab)} style={{ padding: '0.6rem 1.5rem', borderRadius: '25px', display: 'flex', alignItems: 'center', gap: '0.6rem', transition: 'all 0.3s ease' }}>
+                            {tab === 'Checklist' && <ListChecks size={16} />}
+                            {tab === 'Table' && <LayoutList size={16} />}
+                            {tab === 'Board' && <Columns size={16} />}
+                            {tab === 'Completed' && <Edit3 size={16} />}
+                            {tab}
+                        </div>
+                    ))}
+                </div>
+            )}
 
             <div className={`tasks-layout-container ${isEditing ? 'is-editing' : ''}`} style={{ flex: 1, overflow: 'hidden', display: 'flex', height: '100%', position: 'relative' }}>
                 <div 
