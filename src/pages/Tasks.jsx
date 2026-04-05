@@ -94,12 +94,13 @@ export default function Tasks() {
                 return isToday(new Date(t.due_date.split(' - ')[0]));
             });
         }
-        // Hide completed tasks from all tabs except the Completed tab
-        if (activeTab !== 'Completed') {
-            filtered = filtered.filter(t => t.status !== 'Done');
-        } else {
-            // In Completed tab, show only Done tasks
+        // Board view: show all tasks including Done (in their column)
+        // Checklist & Table: hide Done tasks (use Completed tab for those)
+        // Completed tab: show only Done tasks
+        if (activeTab === 'Completed') {
             filtered = filtered.filter(t => t.status === 'Done');
+        } else if (activeTab !== 'Board') {
+            filtered = filtered.filter(t => t.status !== 'Done');
         }
         return filtered.sort((a, b) => {
             if (activeTab === 'Completed') {
