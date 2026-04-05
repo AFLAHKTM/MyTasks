@@ -26,7 +26,7 @@ export default function Tasks() {
     const { syncAlarmWithTask } = useAlarms();
     
     const navigate = useNavigate();
-    const { taskId } = useParams();
+    const { id: taskId } = useParams();
     const isEditing = !!taskId;
     const isMobile = window.innerWidth <= 768;
 
