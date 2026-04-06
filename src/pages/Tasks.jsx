@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { getTasks, updateTask, createTask, getTaskById, deleteTask } from '../lib/data';
+import { getTasks, updateTask, createTask, getTask, deleteTask } from '../lib/data';
 import { useAlarms } from '../lib/AlarmContext';
 import { 
     LayoutList, Columns, ListChecks, Edit3, Plus, 
@@ -91,9 +91,10 @@ export default function Tasks() {
                 if (hasRecurring) {
                     return t.every_day || t.recurring_days.includes(todayDay);
                 }
-                // Non-recurring: show if due today or no due date
+                // Non-recurring: show if due today, overdue, or no due date
                 if (!t.due_date) return true;
-                return isToday(new Date(t.due_date.split(' - ')[0]));
+                const d = new Date(t.due_date.split(' - ')[0]);
+                return isToday(d) || isPast(d);
             });
         }
         // Board/Table: hide checklist-only tasks (those added via Checklist quick-add)
@@ -448,7 +449,7 @@ export default function Tasks() {
                         ))
                     )}
                 </div>
-                {!isMobile && <QuickAddRow sectionHour={sectionHour} />}
+                <QuickAddRow sectionHour={sectionHour} />
             </div>
         );
 
@@ -470,7 +471,12 @@ export default function Tasks() {
                         marginBottom: '0.5rem',
                         scrollbarWidth: 'none',
                         msOverflowStyle: 'none',
-                        WebkitOverflowScrolling: 'touch'
+                        WebkitOverflowScrolling: 'touch',
+                        position: 'sticky',
+                        top: 0,
+                        zIndex: 200,
+                        backgroundColor: 'var(--bg-primary)',
+                        paddingTop: '0.5rem'
                     }}>
                         {[
                             { name: 'Morning', id: 'sec-morning', color: '#fbbf24' },
@@ -517,51 +523,47 @@ export default function Tasks() {
 
     return (
         <div className="page-container" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            {!(isMobile && activeTab === 'Checklist') && (
-                <>
-                    <div className="page-header" style={{ 
-                        marginBottom: isMobile ? '0.2rem' : '0.5rem', 
-                        display: (isMobile && isEditing) ? 'none' : 'flex',
-                        flexDirection: isMobile ? 'column' : 'row',
-                        alignItems: isMobile ? 'flex-start' : 'center',
-                        gap: '0.25rem'
-                    }}>
-                        <h1 className="page-title" style={{ fontSize: isMobile ? '1.5rem' : '1.875rem' }}>Checklist</h1>
-                        {!isMobile && (
-                            <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                <button className={`btn ${isCompactView ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setIsCompactView(!isCompactView)}>
-                                    {isCompactView ? <Maximize2 size={18} /> : <ListChecks size={18} />}
-                                </button>
-                                <button className="btn btn-primary" onClick={() => handleAddQuickTask()}><Plus size={18} /> New Task</button>
-                            </div>
-                        )}
+            <div className="page-header" style={{ 
+                marginBottom: isMobile ? '0.2rem' : '0.5rem', 
+                display: (isMobile && isEditing) ? 'none' : 'flex',
+                flexDirection: isMobile ? 'column' : 'row',
+                alignItems: isMobile ? 'flex-start' : 'center',
+                gap: '0.25rem'
+            }}>
+                <h1 className="page-title" style={{ fontSize: isMobile ? '1.5rem' : '1.875rem' }}>Checklist</h1>
+                {!isMobile && (
+                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                        <button className={`btn ${isCompactView ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setIsCompactView(!isCompactView)}>
+                            {isCompactView ? <Maximize2 size={18} /> : <ListChecks size={18} />}
+                        </button>
+                        <button className="btn btn-primary" onClick={() => handleAddQuickTask()}><Plus size={18} /> New Task</button>
                     </div>
+                )}
+            </div>
 
-                    <div style={{ 
-                        display: (isMobile && isEditing) ? 'none' : 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'space-between', 
-                        marginBottom: isMobile ? '0.75rem' : '1.5rem', 
-                        background: 'var(--bg-secondary)', 
-                        padding: isMobile ? '0.5rem 0.75rem' : '0.75rem 1.25rem', 
-                        borderRadius: isMobile ? '16px' : 'var(--radius-lg)', 
-                        border: '1px solid var(--border-color)', 
-                        flexWrap: 'wrap', 
-                        gap: '0.5rem' 
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: isMobile ? '0.65rem' : '0.875rem' }}>
-                            <Calendar size={14} /><span style={{ fontWeight: 600 }}>{isMobile ? format(new Date(), 'EEEE, MMM d').toUpperCase() : `TODAY IS ${format(new Date(), 'EEEE').toUpperCase()}`}</span>
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                            {!isMobile && <button onClick={() => { if (confirm('Reschedule overdue tasks?')) { sortedTasks.forEach(t => isPast(new Date(t.due_date)) && handleUpdate(t.id, 'due_date', new Date().toISOString())); } }} style={{ background: 'transparent', border: '1px dashed var(--border-color)', color: 'var(--text-tertiary)', fontSize: '0.7rem', padding: '0.4rem 0.75rem', borderRadius: '18px' }}>RESCHEDULE ALL</button>}
-                            <div className="filter-toggle" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '20px', padding: '2px' }}>
-                                <button onClick={() => setShowTodayOnly(true)} style={{ padding: isMobile ? '0.3rem 0.8rem' : '0.4rem 1.25rem', fontSize: '0.7rem', borderRadius: '18px', border: 'none', background: showTodayOnly ? 'var(--accent-primary)' : 'transparent', color: showTodayOnly ? 'white' : 'var(--text-tertiary)' }}>TODAY</button>
-                                <button onClick={() => setShowTodayOnly(false)} style={{ padding: isMobile ? '0.3rem 0.8rem' : '0.4rem 1.25rem', fontSize: '0.7rem', borderRadius: '18px', border: 'none', background: !showTodayOnly ? 'var(--accent-primary)' : 'transparent', color: !showTodayOnly ? 'white' : 'var(--text-tertiary)' }}>ALL</button>
-                            </div>
-                        </div>
+            <div style={{ 
+                display: (isMobile && isEditing) ? 'none' : 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between', 
+                marginBottom: isMobile ? '0.75rem' : '1.5rem', 
+                background: 'var(--bg-secondary)', 
+                padding: isMobile ? '0.5rem 0.75rem' : '0.75rem 1.25rem', 
+                borderRadius: isMobile ? '16px' : 'var(--radius-lg)', 
+                border: '1px solid var(--border-color)', 
+                flexWrap: 'wrap', 
+                gap: '0.5rem' 
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: isMobile ? '0.65rem' : '0.875rem' }}>
+                    <Calendar size={14} /><span style={{ fontWeight: 600 }}>{isMobile ? format(new Date(), 'EEEE, MMM d').toUpperCase() : `TODAY IS ${format(new Date(), 'EEEE').toUpperCase()}`}</span>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    {!isMobile && <button onClick={() => { if (confirm('Reschedule overdue tasks?')) { sortedTasks.forEach(t => isPast(new Date(t.due_date)) && handleUpdate(t.id, 'due_date', new Date().toISOString())); } }} style={{ background: 'transparent', border: '1px dashed var(--border-color)', color: 'var(--text-tertiary)', fontSize: '0.7rem', padding: '0.4rem 0.75rem', borderRadius: '18px' }}>RESCHEDULE ALL</button>}
+                    <div className="filter-toggle" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '20px', padding: '2px' }}>
+                        <button onClick={() => setShowTodayOnly(true)} style={{ padding: isMobile ? '0.3rem 0.8rem' : '0.4rem 1.25rem', fontSize: '0.7rem', borderRadius: '18px', border: 'none', background: showTodayOnly ? 'var(--accent-primary)' : 'transparent', color: showTodayOnly ? 'white' : 'var(--text-tertiary)' }}>TODAY</button>
+                        <button onClick={() => setShowTodayOnly(false)} style={{ padding: isMobile ? '0.3rem 0.8rem' : '0.4rem 1.25rem', fontSize: '0.7rem', borderRadius: '18px', border: 'none', background: !showTodayOnly ? 'var(--accent-primary)' : 'transparent', color: !showTodayOnly ? 'white' : 'var(--text-tertiary)' }}>ALL</button>
                     </div>
-                </>
-            )}
+                </div>
+            </div>
 
             {!isMobile && (
                 <div className="tabs" style={{ margin: '1rem 0', padding: '4px', background: 'var(--bg-secondary)', borderRadius: '30px', border: '1px solid var(--border-color)', display: (isMobile && isEditing) ? 'none' : 'inline-flex', alignSelf: 'center', width: isMobile ? 'auto' : 'fit-content' }}>
